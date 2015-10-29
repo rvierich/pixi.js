@@ -80,6 +80,11 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
      */
     this.frame = null;
 
+    //
+    this.defaultFrame = new PIXI.Rectangle();
+    this.destinationFrame = null;
+    this.sourceFrame = null;
+
     /**
      * The stencil buffer stores masking data for the render target
      *
@@ -173,7 +178,7 @@ module.exports = RenderTarget;
  *
  * @param [bind=false] {boolean} Should we bind our framebuffer before clearing?
  */
-RenderTarget.prototype.clear = function(bind)
+RenderTarget.prototype.clear = function(bind, destinationFrame)
 {
     var gl = this.gl;
     if(bind)
@@ -181,8 +186,24 @@ RenderTarget.prototype.clear = function(bind)
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
     }
 
-    gl.clearColor(0,0,0,0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    if(destinationFrame)
+    {
+        gl.enable(gl.SCISSOR_TEST);
+        // set the scissor rectangle.
+        gl.scissor(destinationFrame.x, destinationFrame.y, destinationFrame.width* this.resolution, destinationFrame.height* this.resolution);
+   
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    
+        //gl.disable(gl.SCISSOR_TEST);
+    }
+    else
+    {
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+   
+    
 };
 
 /**
@@ -216,51 +237,69 @@ RenderTarget.prototype.attachStencilBuffer = function()
  * Binds the buffers and initialises the viewport.
  *
  */
-RenderTarget.prototype.activate = function()
+RenderTarget.prototype.activate = function(destinationFrame, sourceFrame)
 {
     //TOOD refactor usage of frame..
     var gl = this.gl;
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
 
-    var projectionFrame = this.frame || this.size;
+    this.destinationFrame = destinationFrame || this.destinationFrame || this.defaultFrame;
+    this.sourceFrame = sourceFrame || this.sourceFrame || destinationFrame;
 
-    // TODO add a dirty flag to this of a setter for the frame?
-    this.calculateProjection( projectionFrame );
+    this.calculateProjection( this.destinationFrame, this.sourceFrame );
 
     if(this.transform)
     {
         this.projectionMatrix.append(this.transform);
     }
 
-    gl.viewport(0,0, projectionFrame.width * this.resolution, projectionFrame.height * this.resolution);
+    if(this.destinationFrame !== this.sourceFrame)
+    {
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(this.destinationFrame.x, this.destinationFrame.y, this.destinationFrame.width* this.resolution, this.destinationFrame.height* this.resolution);
+    }
+    else
+    {
+        gl.disable(gl.SCISSOR_TEST);
+    }
+
+
+    // TODO - does not need to be updated all the time??
+    gl.viewport(this.destinationFrame.x,this.destinationFrame.y, this.destinationFrame.width * this.resolution, this.destinationFrame.height * this.resolution);
+
+
 };
+
 
 /**
  * Updates the projection matrix based on a projection frame (which is a rectangle)
  *
  */
-RenderTarget.prototype.calculateProjection = function (projectionFrame)
+RenderTarget.prototype.calculateProjection = function (destinationFrame, sourceFrame)
 {
     var pm = this.projectionMatrix;
 
+    sourceFrame = sourceFrame || destinationFrame;
+
     pm.identity();
 
+    // TODO: make dest scale source
     if (!this.root)
     {
-        pm.a = 1 / projectionFrame.width*2;
-        pm.d = 1 / projectionFrame.height*2;
+        pm.a = 1 / destinationFrame.width*2;
+        pm.d = 1 / destinationFrame.height*2;
 
-        pm.tx = -1 - projectionFrame.x * pm.a;
-        pm.ty = -1 - projectionFrame.y * pm.d;
+        pm.tx = -1 - sourceFrame.x * pm.a;
+        pm.ty = -1 - sourceFrame.y * pm.d;
     }
     else
     {
-        pm.a = 1 / projectionFrame.width*2;
-        pm.d = -1 / projectionFrame.height*2;
+        pm.a = 1 / destinationFrame.width*2;
+        pm.d = -1 / destinationFrame.height*2;
 
-        pm.tx = -1 - projectionFrame.x * pm.a;
-        pm.ty = 1 - projectionFrame.y * pm.d;
+        pm.tx = -1 - sourceFrame.x * pm.a;
+        pm.ty = 1 - sourceFrame.y * pm.d;
     }
 };
 
@@ -282,6 +321,9 @@ RenderTarget.prototype.resize = function (width, height)
 
     this.size.width = width;
     this.size.height = height;
+
+    this.defaultFrame.width = width;
+    this.defaultFrame.height = height;
 
     if (!this.root)
     {

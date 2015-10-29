@@ -36,7 +36,9 @@ var core = module.exports = Object.assign(require('./const'), require('./math'),
     Texture:                require('./textures/Texture'),
     BaseTexture:            require('./textures/BaseTexture'),
     RenderTexture:          require('./textures/RenderTexture'),
+    RenderTextureNew:       require('./textures/RenderTextureNew'),
     VideoBaseTexture:       require('./textures/VideoBaseTexture'),
+    BaseRenderTexture:      require('./textures/BaseRenderTexture'),
     TextureUvs:             require('./textures/TextureUvs'),
 
     // renderers - canvas

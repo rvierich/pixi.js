@@ -46,12 +46,14 @@ var BaseRenderTexture = require('./BaseRenderTexture'),
  * @param [scaleMode] {number} See {@link PIXI.SCALE_MODES} for possible values
  * @param [resolution=1] {number} The resolution of the texture being generated
  */
-function RenderTexture(renderer, width, height, scaleMode, resolution)
+function RenderTexture(baseRenderTexture, frame)
 {
     if (!renderer)
     {
         throw new Error('Unable to create RenderTexture, you must pass a renderer into the constructor.');
     }
+
+    frame = frame || new math.Rectangle(0,0,baseRenderTexture.width, baseRenderTexture.height);
 
     /**
      * The base texture object that this texture uses
@@ -59,8 +61,8 @@ function RenderTexture(renderer, width, height, scaleMode, resolution)
      * @member {BaseTexture}
      */
     Texture.call(this,
-        new BaseRenderTexture(renderer, width, height, scaleMode, resolution),
-        frame = new math.Rectangle(0,0,width, height)
+        baseRenderTexture,
+        frame
     );
 
 
@@ -129,7 +131,7 @@ RenderTexture.prototype.clear = function ()
 
     this.baseTexture.clear(this.frame)
     
-};
+}; 
 
 /**
  * Internal method assigned to the `render` property if using a CanvasRenderer.
