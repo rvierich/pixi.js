@@ -249,7 +249,7 @@ BaseRenderTexture.prototype.renderWebGL = function (frame, displayObject, matrix
  * @param [matrix] {PIXI.Matrix} Optional matrix to apply to the display object before rendering.
  * @param [clear] {boolean} If true the texture will be cleared before the displayObject is drawn
  */
-BaseRenderTexture.prototype.renderCanvas = function (displayObject, matrix, clear, updateTransform)
+BaseRenderTexture.prototype.renderCanvas = function (frame, displayObject, matrix, clear, updateTransform)
 {
     if (!this.valid)
     {

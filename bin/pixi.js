@@ -1,7 +1,7 @@
 /**
  * @license
  * pixi.js - v3.0.9-dev
- * Compiled 2015-10-21T22:04:26.470Z
+ * Compiled 2015-10-31T22:19:01.499Z
  *
  * pixi.js is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -6328,7 +6328,7 @@ Container.prototype.destroy = function (destroyChildren)
     this.children = null;
 };
 
-},{"../math":29,"../textures/RenderTexture":67,"./DisplayObject":21}],21:[function(require,module,exports){
+},{"../math":29,"../textures/RenderTexture":68,"./DisplayObject":21}],21:[function(require,module,exports){
 var math = require('../math'),
     RenderTexture = require('../textures/RenderTexture'),
     EventEmitter = require('eventemitter3'),
@@ -6615,15 +6615,17 @@ DisplayObject.prototype.updateTransform = function ()
     {
         // I'm assuming that skewing is not going to be very common
         // With that in mind, we can do a full setTransform using the temp matrix
-        _tempMatrix.setTransform(this.position.x
-                                ,this.position.y
-                                ,this.pivot.x
-                                ,this.pivot.y
-                                ,this.scale.x
-                                ,this.scale.y
-                                ,this.rotation
-                                ,this.skew.x
-                                ,this.skew.y );
+        _tempMatrix.setTransform(
+            this.position.x,
+            this.position.y,
+            this.pivot.x,
+            this.pivot.y,
+            this.scale.x,
+            this.scale.y,
+            this.rotation,
+            this.skew.x,
+            this.skew.y
+        );
 
         // now concat the matrix (inlined so that we can avoid using copy)
         wt.a  = _tempMatrix.a  * pt.a + _tempMatrix.b  * pt.c;
@@ -6840,6 +6842,33 @@ DisplayObject.prototype.setParent = function (container)
 };
 
 /**
+ * Convenience function to set the postion, scale, skew and pivot at once.
+ *
+ * @param [x=0] {number} The X position
+ * @param [y=0] {number} The Y position
+ * @param [scaleX=1] {number} The X scale value
+ * @param [scaleY=1] {number} The Y scale value
+ * @param [skewX=0] {number} The X skew value
+ * @param [skewY=0] {number} The Y skew value
+ * @param [pivotX=0] {number} The X pivot value
+ * @param [pivotY=0] {number} The Y pivot value
+ * @return {PIXI.DisplayObject}
+ */
+DisplayObject.prototype.setTransform = function(x, y, scaleX, scaleY, rotation, skewX, skewY, pivotX, pivotY)
+{
+    this.position.x = x || 0;
+    this.position.y = y || 0;
+    this.scale.x = !scaleX ? 1 : scaleX;
+    this.scale.y = !scaleY ? 1 : scaleY;
+    this.rotation = rotation || 0; 
+    this.skew.x = skewX || 0;
+    this.skew.y = skewY || 0;
+    this.pivot.x = pivotX || 0;
+    this.pivot.y = pivotY || 0;
+    return this;
+};
+
+/**
  * Base destroy method for generic display objects
  *
  */
@@ -6861,7 +6890,7 @@ DisplayObject.prototype.destroy = function ()
     this.filterArea = null;
 };
 
-},{"../const":19,"../math":29,"../textures/RenderTexture":67,"eventemitter3":10}],22:[function(require,module,exports){
+},{"../const":19,"../math":29,"../textures/RenderTexture":68,"eventemitter3":10}],22:[function(require,module,exports){
 var Container = require('../display/Container'),
     Texture = require('../textures/Texture'),
     CanvasBuffer = require('../renderers/canvas/utils/CanvasBuffer'),
@@ -8046,7 +8075,7 @@ Graphics.prototype.destroy = function () {
     this._localBounds = null;
 };
 
-},{"../const":19,"../display/Container":20,"../math":29,"../renderers/canvas/utils/CanvasBuffer":41,"../renderers/canvas/utils/CanvasGraphics":42,"../textures/Texture":68,"./GraphicsData":23}],23:[function(require,module,exports){
+},{"../const":19,"../display/Container":20,"../math":29,"../renderers/canvas/utils/CanvasBuffer":41,"../renderers/canvas/utils/CanvasGraphics":42,"../textures/Texture":70,"./GraphicsData":23}],23:[function(require,module,exports){
 /**
  * A GraphicsData object.
  *
@@ -9044,7 +9073,7 @@ GraphicsRenderer.prototype.buildPoly = function (graphicsData, webGLData)
     return true;
 };
 
-},{"../../const":19,"../../math":29,"../../renderers/webgl/WebGLRenderer":45,"../../renderers/webgl/utils/ObjectRenderer":59,"../../utils":73,"./WebGLGraphicsData":25,"earcut":9}],25:[function(require,module,exports){
+},{"../../const":19,"../../math":29,"../../renderers/webgl/WebGLRenderer":45,"../../renderers/webgl/utils/ObjectRenderer":59,"../../utils":75,"./WebGLGraphicsData":25,"earcut":9}],25:[function(require,module,exports){
 /**
  * An object containing WebGL specific properties to be used by the WebGL renderer
  *
@@ -9201,7 +9230,9 @@ var core = module.exports = Object.assign(require('./const'), require('./math'),
     Texture:                require('./textures/Texture'),
     BaseTexture:            require('./textures/BaseTexture'),
     RenderTexture:          require('./textures/RenderTexture'),
+    RenderTextureNew:       require('./textures/RenderTextureNew'),
     VideoBaseTexture:       require('./textures/VideoBaseTexture'),
+    BaseRenderTexture:      require('./textures/BaseRenderTexture'),
     TextureUvs:             require('./textures/TextureUvs'),
 
     // renderers - canvas
@@ -9254,7 +9285,11 @@ var core = module.exports = Object.assign(require('./const'), require('./math'),
     }
 });
 
-},{"./const":19,"./display/Container":20,"./display/DisplayObject":21,"./graphics/Graphics":22,"./graphics/GraphicsData":23,"./graphics/webgl/GraphicsRenderer":24,"./math":29,"./particles/ParticleContainer":35,"./particles/webgl/ParticleRenderer":37,"./renderers/canvas/CanvasRenderer":40,"./renderers/canvas/utils/CanvasBuffer":41,"./renderers/canvas/utils/CanvasGraphics":42,"./renderers/webgl/WebGLRenderer":45,"./renderers/webgl/filters/AbstractFilter":46,"./renderers/webgl/filters/FXAAFilter":47,"./renderers/webgl/filters/SpriteMaskFilter":48,"./renderers/webgl/managers/ShaderManager":52,"./renderers/webgl/shaders/Shader":57,"./renderers/webgl/utils/ObjectRenderer":59,"./renderers/webgl/utils/RenderTarget":61,"./sprites/Sprite":63,"./sprites/webgl/SpriteRenderer":64,"./text/Text":65,"./textures/BaseTexture":66,"./textures/RenderTexture":67,"./textures/Texture":68,"./textures/TextureUvs":69,"./textures/VideoBaseTexture":70,"./ticker":72,"./utils":73}],27:[function(require,module,exports){
+},{"./const":19,"./display/Container":20,"./display/DisplayObject":21,"./graphics/Graphics":22,"./graphics/GraphicsData":23,"./graphics/webgl/GraphicsRenderer":24,"./math":29,"./particles/ParticleContainer":35,"./particles/webgl/ParticleRenderer":37,"./renderers/canvas/CanvasRenderer":40,"./renderers/canvas/utils/CanvasBuffer":41,"./renderers/canvas/utils/CanvasGraphics":42,"./renderers/webgl/WebGLRenderer":45,"./renderers/webgl/filters/AbstractFilter":46,"./renderers/webgl/filters/FXAAFilter":47,"./renderers/webgl/filters/SpriteMaskFilter":48,"./renderers/webgl/managers/ShaderManager":52,"./renderers/webgl/shaders/Shader":57,"./renderers/webgl/utils/ObjectRenderer":59,"./renderers/webgl/utils/RenderTarget":61,"./sprites/Sprite":63,"./sprites/webgl/SpriteRenderer":64,"./text/Text":65,"./textures/BaseRenderTexture":66,"./textures/BaseTexture":67,"./textures/RenderTexture":68,"./textures/RenderTextureNew":69,"./textures/Texture":70,"./textures/TextureUvs":71,"./textures/VideoBaseTexture":72,"./ticker":74,"./utils":75}],27:[function(require,module,exports){
+// @todo - ignore the too many parameters warning for now
+// should either fix it or change the jshint config
+// jshint -W072
+
 var Point = require('./Point');
 
 /**
@@ -9341,7 +9376,7 @@ Matrix.prototype.fromArray = function (array)
  * @param {number} d
  * @param {number} tx
  * @param {number} ty
- * 
+ *
  * @return {PIXI.Matrix} This matrix. Good for chaining method calls.
  */
 Matrix.prototype.set = function (a, b, c, d, tx, ty)
@@ -9353,7 +9388,7 @@ Matrix.prototype.set = function (a, b, c, d, tx, ty)
     this.tx = tx;
     this.ty = ty;
 
-    return this
+    return this;
 };
 
 
@@ -9361,6 +9396,7 @@ Matrix.prototype.set = function (a, b, c, d, tx, ty)
  * Creates an array from the current Matrix object.
  *
  * @param transpose {boolean} Whether we need to transpose the matrix or not
+ * @param [out] {Array} If provided the array will be assigned to out
  * @return {number[]} the newly created array which contains the matrix
  */
 Matrix.prototype.toArray = function (transpose, out)
@@ -9540,12 +9576,12 @@ Matrix.prototype.append = function (matrix)
  * @param {number} rotation
  * @param {number} skewX
  * @param {number} skewY
- * 
+ *
  * @return {PIXI.Matrix} This matrix. Good for chaining method calls.
  */
 Matrix.prototype.setTransform = function (x, y, pivotX, pivotY, scaleX, scaleY, rotation, skewX, skewY)
 {
-    var a, b, c, d, tx, ty, sr, cr;
+    var a, b, c, d, sr, cr, cy, sy, nsx, cx;
 
     sr  = Math.sin(rotation);
     cr  = Math.cos(rotation);
@@ -11601,7 +11637,7 @@ SystemRenderer.prototype.destroy = function (removeView) {
     this._backgroundColorString = null;
 };
 
-},{"../const":19,"../math":29,"../utils":73,"eventemitter3":10}],40:[function(require,module,exports){
+},{"../const":19,"../math":29,"../utils":75,"eventemitter3":10}],40:[function(require,module,exports){
 var SystemRenderer = require('../SystemRenderer'),
     CanvasMaskManager = require('./utils/CanvasMaskManager'),
     utils = require('../../utils'),
@@ -11865,7 +11901,7 @@ CanvasRenderer.prototype._mapBlendModes = function ()
     }
 };
 
-},{"../../const":19,"../../math":29,"../../utils":73,"../SystemRenderer":39,"./utils/CanvasMaskManager":43}],41:[function(require,module,exports){
+},{"../../const":19,"../../math":29,"../../utils":75,"../SystemRenderer":39,"./utils/CanvasMaskManager":43}],41:[function(require,module,exports){
 /**
  * Creates a Canvas element of the given size.
  *
@@ -12633,7 +12669,7 @@ CanvasTinter.canUseMultiply = utils.canUseNewCanvasBlendModes();
  */
 CanvasTinter.tintMethod = CanvasTinter.canUseMultiply ? CanvasTinter.tintWithMultiply :  CanvasTinter.tintWithPerPixel;
 
-},{"../../../utils":73}],45:[function(require,module,exports){
+},{"../../../utils":75}],45:[function(require,module,exports){
 var SystemRenderer = require('../SystemRenderer'),
     ShaderManager = require('./managers/ShaderManager'),
     MaskManager = require('./managers/MaskManager'),
@@ -13194,7 +13230,7 @@ WebGLRenderer.prototype._mapGlModes = function ()
     }
 };
 
-},{"../../const":19,"../../utils":73,"../SystemRenderer":39,"./filters/FXAAFilter":47,"./managers/BlendModeManager":49,"./managers/FilterManager":50,"./managers/MaskManager":51,"./managers/ShaderManager":52,"./managers/StencilManager":53,"./utils/ObjectRenderer":59,"./utils/RenderTarget":61}],46:[function(require,module,exports){
+},{"../../const":19,"../../utils":75,"../SystemRenderer":39,"./filters/FXAAFilter":47,"./managers/BlendModeManager":49,"./managers/FilterManager":50,"./managers/MaskManager":51,"./managers/ShaderManager":52,"./managers/StencilManager":53,"./utils/ObjectRenderer":59,"./utils/RenderTarget":61}],46:[function(require,module,exports){
 var DefaultShader = require('../shaders/TextureShader');
 
 /**
@@ -13756,7 +13792,12 @@ FilterManager.prototype.popFilter = function ()
 FilterManager.prototype.getRenderTarget = function ( clear )
 {
     var renderTarget = this.texturePool.pop() || new RenderTarget(this.renderer.gl, this.textureSize.width, this.textureSize.height, CONST.SCALE_MODES.LINEAR, this.renderer.resolution * CONST.FILTER_RESOLUTION);
-    renderTarget.frame = this.currentFrame;
+    renderTarget.sourceFrame = renderTarget.frame = this.currentFrame;
+
+    if(!renderTarget.destinationFrame)renderTarget.destinationFrame = new math.Rectangle();
+
+    renderTarget.destinationFrame.width = this.currentFrame.width;
+    renderTarget.destinationFrame.height = this.currentFrame.height;
 
     if (clear)
     {
@@ -14238,7 +14279,7 @@ ShaderManager.prototype.destroy = function ()
     this.tempAttribState = null;
 };
 
-},{"../../../utils":73,"../shaders/ComplexPrimitiveShader":55,"../shaders/PrimitiveShader":56,"../shaders/TextureShader":58,"./WebGLManager":54}],53:[function(require,module,exports){
+},{"../../../utils":75,"../shaders/ComplexPrimitiveShader":55,"../shaders/PrimitiveShader":56,"../shaders/TextureShader":58,"./WebGLManager":54}],53:[function(require,module,exports){
 var WebGLManager = require('./WebGLManager'),
     utils = require('../../../utils');
 
@@ -14584,7 +14625,7 @@ WebGLMaskManager.prototype.popMask = function (maskData)
 };
 
 
-},{"../../../utils":73,"./WebGLManager":54}],54:[function(require,module,exports){
+},{"../../../utils":75,"./WebGLManager":54}],54:[function(require,module,exports){
 /**
  * @class
  * @memberof PIXI
@@ -15314,7 +15355,7 @@ Shader.prototype._glCompile = function (type, src)
     return shader;
 };
 
-},{"../../../utils":73}],58:[function(require,module,exports){
+},{"../../../utils":75}],58:[function(require,module,exports){
 var Shader = require('./Shader');
 
 /**
@@ -15721,6 +15762,11 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
      */
     this.frame = null;
 
+    //
+    this.defaultFrame = new PIXI.Rectangle();
+    this.destinationFrame = null;
+    this.sourceFrame = null;
+
     /**
      * The stencil buffer stores masking data for the render target
      *
@@ -15814,7 +15860,7 @@ module.exports = RenderTarget;
  *
  * @param [bind=false] {boolean} Should we bind our framebuffer before clearing?
  */
-RenderTarget.prototype.clear = function(bind)
+RenderTarget.prototype.clear = function(bind, destinationFrame)
 {
     var gl = this.gl;
     if(bind)
@@ -15822,8 +15868,24 @@ RenderTarget.prototype.clear = function(bind)
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
     }
 
-    gl.clearColor(0,0,0,0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    if(destinationFrame)
+    {
+        gl.enable(gl.SCISSOR_TEST);
+        // set the scissor rectangle.
+        gl.scissor(destinationFrame.x, destinationFrame.y, destinationFrame.width* this.resolution, destinationFrame.height* this.resolution);
+   
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    
+        //gl.disable(gl.SCISSOR_TEST);
+    }
+    else
+    {
+        gl.clearColor(0,0,0,0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+   
+    
 };
 
 /**
@@ -15857,51 +15919,69 @@ RenderTarget.prototype.attachStencilBuffer = function()
  * Binds the buffers and initialises the viewport.
  *
  */
-RenderTarget.prototype.activate = function()
+RenderTarget.prototype.activate = function(destinationFrame, sourceFrame)
 {
     //TOOD refactor usage of frame..
     var gl = this.gl;
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffer);
 
-    var projectionFrame = this.frame || this.size;
+    this.destinationFrame = destinationFrame || this.destinationFrame || this.defaultFrame;
+    this.sourceFrame = sourceFrame || this.sourceFrame || destinationFrame;
 
-    // TODO add a dirty flag to this of a setter for the frame?
-    this.calculateProjection( projectionFrame );
+    this.calculateProjection( this.destinationFrame, this.sourceFrame );
 
     if(this.transform)
     {
         this.projectionMatrix.append(this.transform);
     }
 
-    gl.viewport(0,0, projectionFrame.width * this.resolution, projectionFrame.height * this.resolution);
+    if(this.destinationFrame !== this.sourceFrame)
+    {
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(this.destinationFrame.x, this.destinationFrame.y, this.destinationFrame.width* this.resolution, this.destinationFrame.height* this.resolution);
+    }
+    else
+    {
+        gl.disable(gl.SCISSOR_TEST);
+    }
+
+
+    // TODO - does not need to be updated all the time??
+    gl.viewport(this.destinationFrame.x,this.destinationFrame.y, this.destinationFrame.width * this.resolution, this.destinationFrame.height * this.resolution);
+
+
 };
+
 
 /**
  * Updates the projection matrix based on a projection frame (which is a rectangle)
  *
  */
-RenderTarget.prototype.calculateProjection = function (projectionFrame)
+RenderTarget.prototype.calculateProjection = function (destinationFrame, sourceFrame)
 {
     var pm = this.projectionMatrix;
 
+    sourceFrame = sourceFrame || destinationFrame;
+
     pm.identity();
 
+    // TODO: make dest scale source
     if (!this.root)
     {
-        pm.a = 1 / projectionFrame.width*2;
-        pm.d = 1 / projectionFrame.height*2;
+        pm.a = 1 / destinationFrame.width*2;
+        pm.d = 1 / destinationFrame.height*2;
 
-        pm.tx = -1 - projectionFrame.x * pm.a;
-        pm.ty = -1 - projectionFrame.y * pm.d;
+        pm.tx = -1 - sourceFrame.x * pm.a;
+        pm.ty = -1 - sourceFrame.y * pm.d;
     }
     else
     {
-        pm.a = 1 / projectionFrame.width*2;
-        pm.d = -1 / projectionFrame.height*2;
+        pm.a = 1 / destinationFrame.width*2;
+        pm.d = -1 / destinationFrame.height*2;
 
-        pm.tx = -1 - projectionFrame.x * pm.a;
-        pm.ty = 1 - projectionFrame.y * pm.d;
+        pm.tx = -1 - sourceFrame.x * pm.a;
+        pm.ty = 1 - sourceFrame.y * pm.d;
     }
 };
 
@@ -15923,6 +16003,9 @@ RenderTarget.prototype.resize = function (width, height)
 
     this.size.width = width;
     this.size.height = height;
+
+    this.defaultFrame.width = width;
+    this.defaultFrame.height = height;
 
     if (!this.root)
     {
@@ -15960,7 +16043,7 @@ RenderTarget.prototype.destroy = function ()
     this.texture = null;
 };
 
-},{"../../../const":19,"../../../math":29,"../../../utils":73,"./StencilMaskStack":62}],62:[function(require,module,exports){
+},{"../../../const":19,"../../../math":29,"../../../utils":75,"./StencilMaskStack":62}],62:[function(require,module,exports){
 /**
  * Generic Mask Stack data structure
  * @class
@@ -16109,7 +16192,8 @@ Object.defineProperties(Sprite.prototype, {
         },
         set: function (value)
         {
-            this.scale.x = utils.sign(this.scale.x) * value / this.texture._frame.width;
+            var sign = utils.sign(this.scale.x) || 1;
+            this.scale.x = sign * value / this.texture._frame.width;
             this._width = value;
         }
     },
@@ -16127,7 +16211,8 @@ Object.defineProperties(Sprite.prototype, {
         },
         set: function (value)
         {
-            this.scale.y = utils.sign(this.scale.y) * value / this.texture._frame.height;
+            var sign = utils.sign(this.scale.y) || 1;
+            this.scale.y = sign * value / this.texture._frame.height;
             this._height = value;
         }
     },
@@ -16566,7 +16651,7 @@ Sprite.fromImage = function (imageId, crossorigin, scaleMode)
     return new Sprite(Texture.fromImage(imageId, crossorigin, scaleMode));
 };
 
-},{"../const":19,"../display/Container":20,"../math":29,"../renderers/canvas/utils/CanvasTinter":44,"../textures/Texture":68,"../utils":73}],64:[function(require,module,exports){
+},{"../const":19,"../display/Container":20,"../math":29,"../renderers/canvas/utils/CanvasTinter":44,"../textures/Texture":70,"../utils":75}],64:[function(require,module,exports){
 var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
     CONST = require('../../const');
@@ -17649,7 +17734,451 @@ Text.prototype.destroy = function (destroyBaseTexture)
     this._texture.destroy(destroyBaseTexture === undefined ? true : destroyBaseTexture);
 };
 
-},{"../const":19,"../math":29,"../sprites/Sprite":63,"../textures/Texture":68,"../utils":73}],66:[function(require,module,exports){
+},{"../const":19,"../math":29,"../sprites/Sprite":63,"../textures/Texture":70,"../utils":75}],66:[function(require,module,exports){
+var BaseTexture = require('./BaseTexture'),
+    Texture = require('./Texture'),
+    RenderTarget = require('../renderers/webgl/utils/RenderTarget'),
+    FilterManager = require('../renderers/webgl/managers/FilterManager'),
+    CanvasBuffer = require('../renderers/canvas/utils/CanvasBuffer'),
+    math = require('../math'),
+    CONST = require('../const'),
+    tempMatrix = new math.Matrix(),
+    tempRect = new math.Rectangle();
+
+/**
+ * A BaseRenderTexture is a special texture that allows any Pixi display object to be rendered to it.
+ *
+ * __Hint__: All DisplayObjects (i.e. Sprites) that render to a BaseRenderTexture should be preloaded
+ * otherwise black rectangles will be drawn instead.
+ *
+ * A BaseRenderTexture takes a snapshot of any Display Object given to its render method. The position
+ * and rotation of the given Display Objects is ignored. For example:
+ *
+ * ```js
+ * var renderer = PIXI.autoDetectRenderer(1024, 1024, { view: canvas, ratio: 1 });
+ * var BaserenderTexture = new PIXI.BaseRenderTexture(renderer, 800, 600);
+ * var sprite = PIXI.Sprite.fromImage("spinObj_01.png");
+ *
+ * sprite.position.x = 800/2;
+ * sprite.position.y = 600/2;
+ * sprite.anchor.x = 0.5;
+ * sprite.anchor.y = 0.5;
+ *
+ * BaserenderTexture.render(sprite);
+ * ```
+ *
+ * The Sprite in this case will be rendered to a position of 0,0. To render this sprite at its actual
+ * position a Container should be used:
+ *
+ * ```js
+ * var doc = new PIXI.Container();
+ *
+ * doc.addChild(sprite);
+ *
+ * BaserenderTexture.render(doc);  // Renders to center of BaserenderTexture
+ * ```
+ *
+ * @class
+ * @extends PIXI.Texture
+ * @memberof PIXI
+ * @param renderer {PIXI.CanvasRenderer|PIXI.WebGLRenderer} The renderer used for this BaseRenderTexture
+ * @param [width=100] {number} The width of the render texture
+ * @param [height=100] {number} The height of the render texture
+ * @param [scaleMode] {number} See {@link PIXI.SCALE_MODES} for possible values
+ * @param [resolution=1] {number} The resolution of the texture being generated
+ */
+function BaseRenderTexture(renderer, width, height, scaleMode, resolution)
+{
+    if (!renderer)
+    {
+        throw new Error('Unable to create BaseRenderTexture, you must pass a renderer into the constructor.');
+    }
+
+    BaseTexture.call(this, null, scaleMode);
+   
+    this.width = width || 100;
+    this.height = height || 100;
+    this.resolution = resolution || CONST.RESOLUTION;;
+    this.scaleMode = scaleMode || CONST.SCALE_MODES.DEFAULT;
+    this.hasLoaded = true;
+
+    /**
+     * Draw/render the given DisplayObject onto the texture.
+     *
+     * The displayObject and descendents are transformed during this operation.
+     * If `updateTransform` is true then the transformations will be restored before the
+     * method returns. Otherwise it is up to the calling code to correctly use or reset
+     * the transformed display objects.
+     *
+     * The display object is always rendered with a worldAlpha value of 1.
+     *
+     * @method
+     * @param displayObject {PIXI.DisplayObject} The display object to render this texture on
+     * @param [matrix] {PIXI.Matrix} Optional matrix to apply to the display object before rendering.
+     * @param [clear=false] {boolean} If true the texture will be cleared before the displayObject is drawn
+     * @param [updateTransform=true] {boolean} If true the displayObject's worldTransform/worldAlpha and all children
+     *  transformations will be restored. Not restoring this information will be a little faster.
+     */
+    this.render = null;
+
+    /**
+     * The renderer this BaseRenderTexture uses. A BaseRenderTexture can only belong to one renderer at the moment if its webGL.
+     *
+     * @member {PIXI.CanvasRenderer|PIXI.WebGLRenderer}
+     */
+    this.renderer = renderer;
+
+    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
+    {
+        var gl = this.renderer.gl;
+
+        this.textureBuffer = new RenderTarget(gl, this.width, this.height, this.scaleMode, this.resolution);//, this.this.scaleMode);
+        this._glTextures[gl.id] =  this.textureBuffer.texture;
+
+        //TODO refactor filter manager.. as really its no longer a manager if we use it here..
+        this.filterManager = new FilterManager(this.renderer);
+        this.filterManager.onContextChange();
+        this.filterManager.resize(width, height);
+        this.render = this.renderWebGL;
+
+        // the creation of a filter manager unbinds the buffers..
+        this.renderer.currentRenderer.start();
+        this.renderer.currentRenderTarget.activate();
+    }
+    else
+    {
+
+        this.render = this.renderCanvas;
+        this.textureBuffer = new CanvasBuffer(this.width* this.resolution, this.height* this.resolution);
+        this.source = this.textureBuffer.canvas;
+    }
+
+    /**
+     * @member {boolean}
+     */
+    this.valid = true;
+
+}
+
+BaseRenderTexture.prototype = Object.create(BaseTexture.prototype);
+BaseRenderTexture.prototype.constructor = BaseRenderTexture;
+module.exports = BaseRenderTexture;
+
+/**
+ * Resizes the BaseRenderTexture.
+ *
+ * @param width {number} The width to resize to.
+ * @param height {number} The height to resize to.
+ * @param updateBase {boolean} Should the baseTexture.width and height values be resized as well?
+ */
+BaseRenderTexture.prototype.resize = function (width, height)
+{
+    if (width === this.width && height === this.height)
+    {
+        return;
+    }
+
+    this.valid = (width > 0 && height > 0);
+
+    this.width = width;
+    this.height = height;
+
+    if (!this.valid)
+    {
+        return;
+    }
+
+    this.textureBuffer.resize(this.width, this.height);
+
+    if(this.filterManager)
+    {
+        this.filterManager.resize(this.width, this.height);
+    }
+};
+
+/**
+ * Clears the BaseRenderTexture.
+ *
+ */
+BaseRenderTexture.prototype.clear = function (destinationFrame)
+{
+    if (!this.valid)
+    {
+        return;
+    }
+
+    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
+    {
+        this.renderer.gl.bindFramebuffer(this.renderer.gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
+    }
+
+    this.textureBuffer.clear(false, destinationFrame);
+};
+
+/**
+ * Internal method assigned to the `render` property if using a CanvasRenderer.
+ *
+ * @private
+ * @param displayObject {PIXI.DisplayObject} The display object to render this texture on
+ * @param [matrix] {PIXI.Matrix} Optional matrix to apply to the display object before rendering.
+ * @param [clear=false] {boolean} If true the texture will be cleared before the displayObject is drawn
+ * @param [updateTransform=true] {boolean} If true the displayObject's worldTransform/worldAlpha and all children
+ *  transformations will be restored. Not restoring this information will be a little faster.
+ */
+BaseRenderTexture.prototype.renderWebGL = function (frame, displayObject, matrix, clear, updateTransform)
+{
+    if (!this.valid)
+    {
+        return;
+    }
+
+
+    updateTransform = (updateTransform !== undefined) ? updateTransform : true;//!updateTransform;
+
+    this.textureBuffer.transform = matrix;
+
+    //TODO not a fan that this is here... it will move!
+    this.textureBuffer.activate();
+
+    // setWorld Alpha to ensure that the object is renderer at full opacity
+    displayObject.worldAlpha = 1;
+
+    if (updateTransform)
+    {
+
+        // reset the matrix of the displatyObject..
+        displayObject.worldTransform.identity();
+
+        displayObject.currentBounds = null;
+
+        // Time to update all the children of the displayObject with the new matrix..
+        var children = displayObject.children;
+        var i, j;
+
+        for (i = 0, j = children.length; i < j; ++i)
+        {
+            children[i].updateTransform();
+        }
+    }
+
+    tempRect.width = frame.height;
+    tempRect.height = frame.width;
+
+    //TODO rename textureBuffer to renderTarget..
+    var temp =  this.renderer.filterManager;
+
+    this.renderer.filterManager = this.filterManager;
+    
+
+    this.textureBuffer.activate(frame, tempRect);
+    this.renderer.renderDisplayObject(displayObject, this.textureBuffer, clear);
+
+   // console.log("RENDERING ");
+    this.renderer.filterManager = temp;
+};
+
+
+/**
+ * Internal method assigned to the `render` property if using a CanvasRenderer.
+ *
+ * @private
+ * @param displayObject {PIXI.DisplayObject} The display object to render this texture on
+ * @param [matrix] {PIXI.Matrix} Optional matrix to apply to the display object before rendering.
+ * @param [clear] {boolean} If true the texture will be cleared before the displayObject is drawn
+ */
+BaseRenderTexture.prototype.renderCanvas = function (frame, displayObject, matrix, clear, updateTransform)
+{
+    if (!this.valid)
+    {
+        return;
+    }
+
+    updateTransform = !!updateTransform;
+
+    var wt = tempMatrix;
+
+    wt.identity();
+
+    if (matrix)
+    {
+        wt.append(matrix);
+    }
+
+    displayObject.worldTransform = wt;
+    var cachedWt = displayObject.worldTransform;
+
+    // setWorld Alpha to ensure that the object is renderer at full opacity
+    displayObject.worldAlpha = 1;
+
+    // Time to update all the children of the displayObject with the new matrix..
+    var children = displayObject.children;
+    var i, j;
+
+    for (i = 0, j = children.length; i < j; ++i)
+    {
+        children[i].updateTransform();
+    }
+
+    if (clear)
+    {
+        this.textureBuffer.clear();
+    }
+
+    
+//    this.textureBuffer.
+    var context = this.textureBuffer.context;
+
+    var realResolution = this.renderer.resolution;
+
+    this.renderer.resolution = this.resolution;
+
+    this.renderer.renderDisplayObject(displayObject, context);
+
+    this.renderer.resolution = realResolution;
+
+    if(displayObject.worldTransform === wt)
+    {
+        // fixes cacheAsBitmap Happening during the above..
+        displayObject.worldTransform = cachedWt;
+    }
+
+};
+
+/**
+ * Destroys this texture
+ *
+ * @param destroyBase {boolean} Whether to destroy the base texture as well
+ */
+BaseRenderTexture.prototype.destroy = function ()
+{
+    Texture.prototype.destroy.call(this, true);
+
+    this.textureBuffer.destroy();
+
+    // destroy the filtermanager..
+    if(this.filterManager)
+    {
+        this.filterManager.destroy();
+    }
+
+    this.renderer = null;
+};
+
+/**
+ * Will return a HTML Image of the texture
+ *
+ * @return {Image}
+ */
+BaseRenderTexture.prototype.getImage = function ()
+{
+    var image = new Image();
+    image.src = this.getBase64();
+    return image;
+};
+
+/**
+ * Will return a a base64 encoded string of this texture. It works by calling BaseRenderTexture.getCanvas and then running toDataURL on that.
+ *
+ * @return {string} A base64 encoded string of the texture.
+ */
+BaseRenderTexture.prototype.getBase64 = function ()
+{
+    return this.getCanvas().toDataURL();
+};
+
+/**
+ * Creates a Canvas element, renders this BaseRenderTexture to it and then returns it.
+ *
+ * @return {HTMLCanvasElement} A Canvas element with the texture rendered on.
+ */
+BaseRenderTexture.prototype.getCanvas = function ()
+{
+    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
+    {
+        var gl = this.renderer.gl;
+        var width = this.textureBuffer.size.width;
+        var height = this.textureBuffer.size.height;
+
+        var webGLPixels = new Uint8Array(4 * width * height);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        var tempCanvas = new CanvasBuffer(width, height);
+        var canvasData = tempCanvas.context.getImageData(0, 0, width, height);
+        canvasData.data.set(webGLPixels);
+
+        tempCanvas.context.putImageData(canvasData, 0, 0);
+
+        return tempCanvas.canvas;
+    }
+    else
+    {
+        return this.textureBuffer.canvas;
+    }
+};
+
+/**
+ * Will return a one-dimensional array containing the pixel data of the entire texture in RGBA order, with integer values between 0 and 255 (included).
+ *
+ * @return {Uint8ClampedArray}
+ */
+BaseRenderTexture.prototype.getPixels = function ()
+{
+    var width, height;
+
+    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
+    {
+        var gl = this.renderer.gl;
+        width = this.textureBuffer.size.width;
+        height = this.textureBuffer.size.height;
+
+        var webGLPixels = new Uint8Array(4 * width * height);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        return webGLPixels;
+    }
+    else
+    {
+        width = this.textureBuffer.canvas.width;
+        height = this.textureBuffer.canvas.height;
+
+        return this.textureBuffer.canvas.getContext('2d').getImageData(0, 0, width, height).data;
+    }
+};
+
+/**
+ * Will return a one-dimensional array containing the pixel data of a pixel within the texture in RGBA order, with integer values between 0 and 255 (included).
+ *
+ * @param x {number} The x coordinate of the pixel to retrieve.
+ * @param y {number} The y coordinate of the pixel to retrieve.
+ * @return {Uint8ClampedArray}
+ */
+BaseRenderTexture.prototype.getPixel = function (x, y)
+{
+    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
+    {
+        var gl = this.renderer.gl;
+
+        var webGLPixels = new Uint8Array(4);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        return webGLPixels;
+    }
+    else
+    {
+        return this.textureBuffer.canvas.getContext('2d').getImageData(x, y, 1, 1).data;
+    }
+};
+
+},{"../const":19,"../math":29,"../renderers/canvas/utils/CanvasBuffer":41,"../renderers/webgl/managers/FilterManager":50,"../renderers/webgl/utils/RenderTarget":61,"./BaseTexture":67,"./Texture":70}],67:[function(require,module,exports){
 var utils = require('../utils'),
     CONST = require('../const'),
     EventEmitter = require('eventemitter3');
@@ -18083,12 +18612,9 @@ BaseTexture.fromCanvas = function (canvas, scaleMode)
     return baseTexture;
 };
 
-},{"../const":19,"../utils":73,"eventemitter3":10}],67:[function(require,module,exports){
-var BaseTexture = require('./BaseTexture'),
+},{"../const":19,"../utils":75,"eventemitter3":10}],68:[function(require,module,exports){
+var BaseRenderTexture = require('./BaseRenderTexture'),
     Texture = require('./Texture'),
-    RenderTarget = require('../renderers/webgl/utils/RenderTarget'),
-    FilterManager = require('../renderers/webgl/managers/FilterManager'),
-    CanvasBuffer = require('../renderers/canvas/utils/CanvasBuffer'),
     math = require('../math'),
     CONST = require('../const'),
     tempMatrix = new math.Matrix();
@@ -18142,26 +18668,14 @@ function RenderTexture(renderer, width, height, scaleMode, resolution)
         throw new Error('Unable to create RenderTexture, you must pass a renderer into the constructor.');
     }
 
-    width = width || 100;
-    height = height || 100;
-    resolution = resolution || CONST.RESOLUTION;
-
     /**
      * The base texture object that this texture uses
      *
      * @member {BaseTexture}
      */
-    var baseTexture = new BaseTexture();
-    baseTexture.width = width;
-    baseTexture.height = height;
-    baseTexture.resolution = resolution;
-    baseTexture.scaleMode = scaleMode || CONST.SCALE_MODES.DEFAULT;
-    baseTexture.hasLoaded = true;
-
-
     Texture.call(this,
-        baseTexture,
-        new math.Rectangle(0, 0, width, height)
+        new BaseRenderTexture(renderer, width, height, scaleMode, resolution),
+        frame = new math.Rectangle(0,0,width, height)
     );
 
 
@@ -18170,72 +18684,14 @@ function RenderTexture(renderer, width, height, scaleMode, resolution)
      *
      * @member {number}
      */
-    this.width = width;
+    this.width = frame.width;
 
     /**
      * The height of the render texture
      *
      * @member {number}
      */
-    this.height = height;
-
-    /**
-     * The Resolution of the texture.
-     *
-     * @member {number}
-     */
-    this.resolution = resolution;
-
-    /**
-     * Draw/render the given DisplayObject onto the texture.
-     *
-     * The displayObject and descendents are transformed during this operation.
-     * If `updateTransform` is true then the transformations will be restored before the
-     * method returns. Otherwise it is up to the calling code to correctly use or reset
-     * the transformed display objects.
-     *
-     * The display object is always rendered with a worldAlpha value of 1.
-     *
-     * @method
-     * @param displayObject {PIXI.DisplayObject} The display object to render this texture on
-     * @param [matrix] {PIXI.Matrix} Optional matrix to apply to the display object before rendering.
-     * @param [clear=false] {boolean} If true the texture will be cleared before the displayObject is drawn
-     * @param [updateTransform=true] {boolean} If true the displayObject's worldTransform/worldAlpha and all children
-     *  transformations will be restored. Not restoring this information will be a little faster.
-     */
-    this.render = null;
-
-    /**
-     * The renderer this RenderTexture uses. A RenderTexture can only belong to one renderer at the moment if its webGL.
-     *
-     * @member {PIXI.CanvasRenderer|PIXI.WebGLRenderer}
-     */
-    this.renderer = renderer;
-
-    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
-    {
-        var gl = this.renderer.gl;
-
-        this.textureBuffer = new RenderTarget(gl, this.width, this.height, baseTexture.scaleMode, this.resolution);//, this.baseTexture.scaleMode);
-        this.baseTexture._glTextures[gl.id] =  this.textureBuffer.texture;
-
-        //TODO refactor filter manager.. as really its no longer a manager if we use it here..
-        this.filterManager = new FilterManager(this.renderer);
-        this.filterManager.onContextChange();
-        this.filterManager.resize(width, height);
-        this.render = this.renderWebGL;
-
-        // the creation of a filter manager unbinds the buffers..
-        this.renderer.currentRenderer.start();
-        this.renderer.currentRenderTarget.activate();
-    }
-    else
-    {
-
-        this.render = this.renderCanvas;
-        this.textureBuffer = new CanvasBuffer(this.width* this.resolution, this.height* this.resolution);
-        this.baseTexture.source = this.textureBuffer.canvas;
-    }
+    this.height = frame.height;
 
     /**
      * @member {boolean}
@@ -18263,27 +18719,15 @@ RenderTexture.prototype.resize = function (width, height, updateBase)
         return;
     }
 
+    //TODO - could be not required..
     this.valid = (width > 0 && height > 0);
 
-    this.width = this._frame.width = this.crop.width = width;
-    this.height =  this._frame.height = this.crop.height = height;
+    this._frame.width = this.crop.width = width;
+    this._frame.height = this.crop.height = height;
 
     if (updateBase)
     {
-        this.baseTexture.width = this.width;
-        this.baseTexture.height = this.height;
-    }
-
-    if (!this.valid)
-    {
-        return;
-    }
-
-    this.textureBuffer.resize(this.width, this.height);
-
-    if(this.filterManager)
-    {
-        this.filterManager.resize(this.width, this.height);
+        this.baseTexture.resize(width, height)
     }
 };
 
@@ -18298,12 +18742,8 @@ RenderTexture.prototype.clear = function ()
         return;
     }
 
-    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
-    {
-        this.renderer.gl.bindFramebuffer(this.renderer.gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-    }
-
-    this.textureBuffer.clear();
+    this.baseTexture.clear(this.frame)
+    
 };
 
 /**
@@ -18316,117 +18756,16 @@ RenderTexture.prototype.clear = function ()
  * @param [updateTransform=true] {boolean} If true the displayObject's worldTransform/worldAlpha and all children
  *  transformations will be restored. Not restoring this information will be a little faster.
  */
-RenderTexture.prototype.renderWebGL = function (displayObject, matrix, clear, updateTransform)
+RenderTexture.prototype.render = function (displayObject, matrix, clear, updateTransform)
 {
     if (!this.valid)
     {
         return;
     }
 
-
-    updateTransform = (updateTransform !== undefined) ? updateTransform : true;//!updateTransform;
-
-    this.textureBuffer.transform = matrix;
-
-    //TODO not a fan that this is here... it will move!
-    this.textureBuffer.activate();
-
-    // setWorld Alpha to ensure that the object is renderer at full opacity
-    displayObject.worldAlpha = 1;
-
-    if (updateTransform)
-    {
-
-        // reset the matrix of the displatyObject..
-        displayObject.worldTransform.identity();
-
-        displayObject.currentBounds = null;
-
-        // Time to update all the children of the displayObject with the new matrix..
-        var children = displayObject.children;
-        var i, j;
-
-        for (i = 0, j = children.length; i < j; ++i)
-        {
-            children[i].updateTransform();
-        }
-    }
-
-    //TODO rename textureBuffer to renderTarget..
-    var temp =  this.renderer.filterManager;
-
-    this.renderer.filterManager = this.filterManager;
-    this.renderer.renderDisplayObject(displayObject, this.textureBuffer, clear);
-
-    this.renderer.filterManager = temp;
+    this.baseTexture.render(this.frame, displayObject, matrix, clear, updateTransform)
 };
 
-
-/**
- * Internal method assigned to the `render` property if using a CanvasRenderer.
- *
- * @private
- * @param displayObject {PIXI.DisplayObject} The display object to render this texture on
- * @param [matrix] {PIXI.Matrix} Optional matrix to apply to the display object before rendering.
- * @param [clear] {boolean} If true the texture will be cleared before the displayObject is drawn
- */
-RenderTexture.prototype.renderCanvas = function (displayObject, matrix, clear, updateTransform)
-{
-    if (!this.valid)
-    {
-        return;
-    }
-
-    updateTransform = !!updateTransform;
-
-    var wt = tempMatrix;
-
-    wt.identity();
-
-    if (matrix)
-    {
-        wt.append(matrix);
-    }
-
-    displayObject.worldTransform = wt;
-    var cachedWt = displayObject.worldTransform;
-
-    // setWorld Alpha to ensure that the object is renderer at full opacity
-    displayObject.worldAlpha = 1;
-
-    // Time to update all the children of the displayObject with the new matrix..
-    var children = displayObject.children;
-    var i, j;
-
-    for (i = 0, j = children.length; i < j; ++i)
-    {
-        children[i].updateTransform();
-    }
-
-    if (clear)
-    {
-        this.textureBuffer.clear();
-    }
-
-   
-//    this.textureBuffer.
-    var context = this.textureBuffer.context;
-
-    var realResolution = this.renderer.resolution;
-
-    this.renderer.resolution = this.resolution;
-
-    this.renderer.renderDisplayObject(displayObject, context);
-
-    this.renderer.resolution = realResolution;
-
-     displayObject.worldTransform = cachedWt;
-
- //   context.setTransform(1, 0, 0, 1, 0, 0);
-   // context.fillStyle ="#FF0000"
-//    context.fillRect(0, 0, 800, 600);
-
-};
 
 /**
  * Destroys this texture
@@ -18436,16 +18775,6 @@ RenderTexture.prototype.renderCanvas = function (displayObject, matrix, clear, u
 RenderTexture.prototype.destroy = function ()
 {
     Texture.prototype.destroy.call(this, true);
-
-    this.textureBuffer.destroy();
-
-    // destroy the filtermanager..
-    if(this.filterManager)
-    {
-        this.filterManager.destroy();
-    }
-
-    this.renderer = null;
 };
 
 /**
@@ -18455,9 +18784,7 @@ RenderTexture.prototype.destroy = function ()
  */
 RenderTexture.prototype.getImage = function ()
 {
-    var image = new Image();
-    image.src = this.getBase64();
-    return image;
+    
 };
 
 /**
@@ -18467,7 +18794,7 @@ RenderTexture.prototype.getImage = function ()
  */
 RenderTexture.prototype.getBase64 = function ()
 {
-    return this.getCanvas().toDataURL();
+    
 };
 
 /**
@@ -18477,30 +18804,7 @@ RenderTexture.prototype.getBase64 = function ()
  */
 RenderTexture.prototype.getCanvas = function ()
 {
-    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
-    {
-        var gl = this.renderer.gl;
-        var width = this.textureBuffer.size.width;
-        var height = this.textureBuffer.size.height;
-
-        var webGLPixels = new Uint8Array(4 * width * height);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        var tempCanvas = new CanvasBuffer(width, height);
-        var canvasData = tempCanvas.context.getImageData(0, 0, width, height);
-        canvasData.data.set(webGLPixels);
-
-        tempCanvas.context.putImageData(canvasData, 0, 0);
-
-        return tempCanvas.canvas;
-    }
-    else
-    {
-        return this.textureBuffer.canvas;
-    }
+    
 };
 
 /**
@@ -18510,29 +18814,7 @@ RenderTexture.prototype.getCanvas = function ()
  */
 RenderTexture.prototype.getPixels = function ()
 {
-    var width, height;
-
-    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
-    {
-        var gl = this.renderer.gl;
-        width = this.textureBuffer.size.width;
-        height = this.textureBuffer.size.height;
-
-        var webGLPixels = new Uint8Array(4 * width * height);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        return webGLPixels;
-    }
-    else
-    {
-        width = this.textureBuffer.canvas.width;
-        height = this.textureBuffer.canvas.height;
-
-        return this.textureBuffer.canvas.getContext('2d').getImageData(0, 0, width, height).data;
-    }
+    
 };
 
 /**
@@ -18544,25 +18826,241 @@ RenderTexture.prototype.getPixels = function ()
  */
 RenderTexture.prototype.getPixel = function (x, y)
 {
-    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
+    
+};
+
+RenderTexture.create = function(renderer, width, height, scaleMode, resolution)
+{
+    return new RenderTexture(new BaseRenderTexture(renderer, width, height, scaleMode, resolution));
+}
+
+
+},{"../const":19,"../math":29,"./BaseRenderTexture":66,"./Texture":70}],69:[function(require,module,exports){
+var BaseRenderTexture = require('./BaseRenderTexture'),
+    Texture = require('./Texture'),
+    math = require('../math'),
+    CONST = require('../const'),
+    tempMatrix = new math.Matrix();
+
+/**
+ * A RenderTexture is a special texture that allows any Pixi display object to be rendered to it.
+ *
+ * __Hint__: All DisplayObjects (i.e. Sprites) that render to a RenderTexture should be preloaded
+ * otherwise black rectangles will be drawn instead.
+ *
+ * A RenderTexture takes a snapshot of any Display Object given to its render method. The position
+ * and rotation of the given Display Objects is ignored. For example:
+ *
+ * ```js
+ * var renderer = PIXI.autoDetectRenderer(1024, 1024, { view: canvas, ratio: 1 });
+ * var renderTexture = new PIXI.RenderTexture(renderer, 800, 600);
+ * var sprite = PIXI.Sprite.fromImage("spinObj_01.png");
+ *
+ * sprite.position.x = 800/2;
+ * sprite.position.y = 600/2;
+ * sprite.anchor.x = 0.5;
+ * sprite.anchor.y = 0.5;
+ *
+ * renderTexture.render(sprite);
+ * ```
+ *
+ * The Sprite in this case will be rendered to a position of 0,0. To render this sprite at its actual
+ * position a Container should be used:
+ *
+ * ```js
+ * var doc = new PIXI.Container();
+ *
+ * doc.addChild(sprite);
+ *
+ * renderTexture.render(doc);  // Renders to center of renderTexture
+ * ```
+ *
+ * @class
+ * @extends PIXI.Texture
+ * @memberof PIXI
+ * @param renderer {PIXI.CanvasRenderer|PIXI.WebGLRenderer} The renderer used for this RenderTexture
+ * @param [width=100] {number} The width of the render texture
+ * @param [height=100] {number} The height of the render texture
+ * @param [scaleMode] {number} See {@link PIXI.SCALE_MODES} for possible values
+ * @param [resolution=1] {number} The resolution of the texture being generated
+ */
+function RenderTexture(baseRenderTexture, frame)
+{
+    if (!renderer)
     {
-        var gl = this.renderer.gl;
-
-        var webGLPixels = new Uint8Array(4);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        return webGLPixels;
+        throw new Error('Unable to create RenderTexture, you must pass a renderer into the constructor.');
     }
-    else
+
+    frame = frame || new math.Rectangle(0,0,baseRenderTexture.width, baseRenderTexture.height);
+
+    /**
+     * The base texture object that this texture uses
+     *
+     * @member {BaseTexture}
+     */
+    Texture.call(this,
+        baseRenderTexture,
+        frame
+    );
+
+
+    /**
+     * The with of the render texture
+     *
+     * @member {number}
+     */
+    this.width = frame.width;
+
+    /**
+     * The height of the render texture
+     *
+     * @member {number}
+     */
+    this.height = frame.height;
+
+    /**
+     * @member {boolean}
+     */
+    this.valid = true;
+
+    this._updateUvs();
+}
+
+RenderTexture.prototype = Object.create(Texture.prototype);
+RenderTexture.prototype.constructor = RenderTexture;
+module.exports = RenderTexture;
+
+/**
+ * Resizes the RenderTexture.
+ *
+ * @param width {number} The width to resize to.
+ * @param height {number} The height to resize to.
+ * @param updateBase {boolean} Should the baseTexture.width and height values be resized as well?
+ */
+RenderTexture.prototype.resize = function (width, height, updateBase)
+{
+    if (width === this.width && height === this.height)
     {
-        return this.textureBuffer.canvas.getContext('2d').getImageData(x, y, 1, 1).data;
+        return;
+    }
+
+    //TODO - could be not required..
+    this.valid = (width > 0 && height > 0);
+
+    this._frame.width = this.crop.width = width;
+    this._frame.height = this.crop.height = height;
+
+    if (updateBase)
+    {
+        this.baseTexture.resize(width, height)
     }
 };
 
-},{"../const":19,"../math":29,"../renderers/canvas/utils/CanvasBuffer":41,"../renderers/webgl/managers/FilterManager":50,"../renderers/webgl/utils/RenderTarget":61,"./BaseTexture":66,"./Texture":68}],68:[function(require,module,exports){
+/**
+ * Clears the RenderTexture.
+ *
+ */
+RenderTexture.prototype.clear = function ()
+{
+    if (!this.valid)
+    {
+        return;
+    }
+
+    this.baseTexture.clear(this.frame)
+    
+}; 
+
+/**
+ * Internal method assigned to the `render` property if using a CanvasRenderer.
+ *
+ * @private
+ * @param displayObject {PIXI.DisplayObject} The display object to render this texture on
+ * @param [matrix] {PIXI.Matrix} Optional matrix to apply to the display object before rendering.
+ * @param [clear=false] {boolean} If true the texture will be cleared before the displayObject is drawn
+ * @param [updateTransform=true] {boolean} If true the displayObject's worldTransform/worldAlpha and all children
+ *  transformations will be restored. Not restoring this information will be a little faster.
+ */
+RenderTexture.prototype.render = function (displayObject, matrix, clear, updateTransform)
+{
+    if (!this.valid)
+    {
+        return;
+    }
+
+    this.baseTexture.render(this.frame, displayObject, matrix, clear, updateTransform)
+};
+
+
+/**
+ * Destroys this texture
+ *
+ * @param destroyBase {boolean} Whether to destroy the base texture as well
+ */
+RenderTexture.prototype.destroy = function ()
+{
+    Texture.prototype.destroy.call(this, true);
+};
+
+/**
+ * Will return a HTML Image of the texture
+ *
+ * @return {Image}
+ */
+RenderTexture.prototype.getImage = function ()
+{
+    
+};
+
+/**
+ * Will return a a base64 encoded string of this texture. It works by calling RenderTexture.getCanvas and then running toDataURL on that.
+ *
+ * @return {string} A base64 encoded string of the texture.
+ */
+RenderTexture.prototype.getBase64 = function ()
+{
+    
+};
+
+/**
+ * Creates a Canvas element, renders this RenderTexture to it and then returns it.
+ *
+ * @return {HTMLCanvasElement} A Canvas element with the texture rendered on.
+ */
+RenderTexture.prototype.getCanvas = function ()
+{
+    
+};
+
+/**
+ * Will return a one-dimensional array containing the pixel data of the entire texture in RGBA order, with integer values between 0 and 255 (included).
+ *
+ * @return {Uint8ClampedArray}
+ */
+RenderTexture.prototype.getPixels = function ()
+{
+    
+};
+
+/**
+ * Will return a one-dimensional array containing the pixel data of a pixel within the texture in RGBA order, with integer values between 0 and 255 (included).
+ *
+ * @param x {number} The x coordinate of the pixel to retrieve.
+ * @param y {number} The y coordinate of the pixel to retrieve.
+ * @return {Uint8ClampedArray}
+ */
+RenderTexture.prototype.getPixel = function (x, y)
+{
+    
+};
+
+RenderTexture.create = function(renderer, width, height, scaleMode, resolution)
+{
+    return new RenderTexture(new BaseRenderTexture(renderer, width, height, scaleMode, resolution));
+}
+
+
+},{"../const":19,"../math":29,"./BaseRenderTexture":66,"./Texture":70}],70:[function(require,module,exports){
 var BaseTexture = require('./BaseTexture'),
     VideoBaseTexture = require('./VideoBaseTexture'),
     TextureUvs = require('./TextureUvs'),
@@ -18988,7 +19486,7 @@ Texture.removeTextureFromCache = function (id)
  */
 Texture.EMPTY = new Texture(new BaseTexture());
 
-},{"../math":29,"../utils":73,"./BaseTexture":66,"./TextureUvs":69,"./VideoBaseTexture":70,"eventemitter3":10}],69:[function(require,module,exports){
+},{"../math":29,"../utils":75,"./BaseTexture":67,"./TextureUvs":71,"./VideoBaseTexture":72,"eventemitter3":10}],71:[function(require,module,exports){
 
 /**
  * A standard object to store the Uvs of a texture
@@ -19057,7 +19555,7 @@ TextureUvs.prototype.set = function (frame, baseFrame, rotate)
     }
 };
 
-},{}],70:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 var BaseTexture = require('./BaseTexture'),
     utils = require('../utils');
 
@@ -19294,7 +19792,7 @@ function createSource(path, type)
     return source;
 }
 
-},{"../utils":73,"./BaseTexture":66}],71:[function(require,module,exports){
+},{"../utils":75,"./BaseTexture":67}],73:[function(require,module,exports){
 var CONST = require('../const'),
     EventEmitter = require('eventemitter3'),
     // Internal event used by composed emitter
@@ -19649,7 +20147,7 @@ Ticker.prototype.update = function update(currentTime)
 
 module.exports = Ticker;
 
-},{"../const":19,"eventemitter3":10}],72:[function(require,module,exports){
+},{"../const":19,"eventemitter3":10}],74:[function(require,module,exports){
 var Ticker = require('./Ticker');
 
 /**
@@ -19705,7 +20203,7 @@ module.exports = {
     Ticker: Ticker
 };
 
-},{"./Ticker":71}],73:[function(require,module,exports){
+},{"./Ticker":73}],75:[function(require,module,exports){
 var CONST = require('../const');
 
 /**
@@ -19956,7 +20454,7 @@ var utils = module.exports = {
     BaseTextureCache: {}
 };
 
-},{"../const":19,"./pluginTarget":74,"async":1,"eventemitter3":10}],74:[function(require,module,exports){
+},{"../const":19,"./pluginTarget":76,"async":1,"eventemitter3":10}],76:[function(require,module,exports){
 /**
  * Mixins functionality to make an object have "plugins".
  *
@@ -20026,7 +20524,7 @@ module.exports = {
     }
 };
 
-},{}],75:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 /*global console */
 var core = require('./core'),
     mesh = require('./mesh'),
@@ -20377,7 +20875,7 @@ core.utils.uuid = function ()
     return core.utils.uid();
 };
 
-},{"./core":26,"./extras":82,"./filters":99,"./mesh":123}],76:[function(require,module,exports){
+},{"./core":26,"./extras":84,"./filters":101,"./mesh":125}],78:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -20765,7 +21263,7 @@ BitmapText.prototype.validate = function()
 
 BitmapText.fonts = {};
 
-},{"../core":26}],77:[function(require,module,exports){
+},{"../core":26}],79:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -21085,7 +21583,7 @@ MovieClip.fromImages = function (images)
 
     return new MovieClip(textures);
 };
-},{"../core":26}],78:[function(require,module,exports){
+},{"../core":26}],80:[function(require,module,exports){
 var core = require('../core'),
     // a sprite use dfor rendering textures..
     tempPoint = new core.Point(),
@@ -21537,7 +22035,7 @@ TilingSprite.fromImage = function (imageId, width, height, crossorigin, scaleMod
     return new TilingSprite(core.Texture.fromImage(imageId, crossorigin, scaleMode),width,height);
 };
 
-},{"../core":26,"../core/renderers/canvas/utils/CanvasTinter":44}],79:[function(require,module,exports){
+},{"../core":26,"../core/renderers/canvas/utils/CanvasTinter":44}],81:[function(require,module,exports){
 var core = require('../core'),
     DisplayObject = core.DisplayObject,
     _tempMatrix = new core.Matrix();
@@ -21673,6 +22171,7 @@ DisplayObject.prototype._initCachedDisplayObject = function (renderer)
 
     // this renderTexture will be used to store the cached DisplayObject
     var renderTexture = new core.RenderTexture(renderer, bounds.width | 0, bounds.height | 0);
+//     var renderTexture = core.RenderTexture.create(renderer, bounds.width | 0, bounds.height | 0);
 
     // need to set //
     var m = _tempMatrix;
@@ -21809,7 +22308,7 @@ DisplayObject.prototype._cacheAsBitmapDestroy = function ()
     this._originalDestroy();
 };
 
-},{"../core":26}],80:[function(require,module,exports){
+},{"../core":26}],82:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -21839,7 +22338,7 @@ core.Container.prototype.getChildByName = function (name)
     return null;
 };
 
-},{"../core":26}],81:[function(require,module,exports){
+},{"../core":26}],83:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -21869,7 +22368,7 @@ core.DisplayObject.prototype.getGlobalPosition = function (point)
     return point;
 };
 
-},{"../core":26}],82:[function(require,module,exports){
+},{"../core":26}],84:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI extras library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -21890,7 +22389,7 @@ module.exports = {
     BitmapText:     require('./BitmapText')
 };
 
-},{"./BitmapText":76,"./MovieClip":77,"./TilingSprite":78,"./cacheAsBitmap":79,"./getChildByName":80,"./getGlobalPosition":81}],83:[function(require,module,exports){
+},{"./BitmapText":78,"./MovieClip":79,"./TilingSprite":80,"./cacheAsBitmap":81,"./getChildByName":82,"./getGlobalPosition":83}],85:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21947,7 +22446,7 @@ Object.defineProperties(AsciiFilter.prototype, {
     }
 });
 
-},{"../../core":26}],84:[function(require,module,exports){
+},{"../../core":26}],86:[function(require,module,exports){
 var core = require('../../core'),
     BlurXFilter = require('../blur/BlurXFilter'),
     BlurYFilter = require('../blur/BlurYFilter');
@@ -22048,7 +22547,7 @@ Object.defineProperties(BloomFilter.prototype, {
     }
 });
 
-},{"../../core":26,"../blur/BlurXFilter":87,"../blur/BlurYFilter":88}],85:[function(require,module,exports){
+},{"../../core":26,"../blur/BlurXFilter":89,"../blur/BlurYFilter":90}],87:[function(require,module,exports){
 var core = require('../../core');
 
 
@@ -22190,7 +22689,7 @@ Object.defineProperties(BlurDirFilter.prototype, {
     }
 });
 
-},{"../../core":26}],86:[function(require,module,exports){
+},{"../../core":26}],88:[function(require,module,exports){
 var core = require('../../core'),
     BlurXFilter = require('./BlurXFilter'),
     BlurYFilter = require('./BlurYFilter');
@@ -22300,7 +22799,7 @@ Object.defineProperties(BlurFilter.prototype, {
     }
 });
 
-},{"../../core":26,"./BlurXFilter":87,"./BlurYFilter":88}],87:[function(require,module,exports){
+},{"../../core":26,"./BlurXFilter":89,"./BlurYFilter":90}],89:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -22393,7 +22892,7 @@ Object.defineProperties(BlurXFilter.prototype, {
     }
 });
 
-},{"../../core":26}],88:[function(require,module,exports){
+},{"../../core":26}],90:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -22479,7 +22978,7 @@ Object.defineProperties(BlurYFilter.prototype, {
     }
 });
 
-},{"../../core":26}],89:[function(require,module,exports){
+},{"../../core":26}],91:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -22509,7 +23008,7 @@ SmartBlurFilter.prototype = Object.create(core.AbstractFilter.prototype);
 SmartBlurFilter.prototype.constructor = SmartBlurFilter;
 module.exports = SmartBlurFilter;
 
-},{"../../core":26}],90:[function(require,module,exports){
+},{"../../core":26}],92:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23045,7 +23544,7 @@ Object.defineProperties(ColorMatrixFilter.prototype, {
     }
 });
 
-},{"../../core":26}],91:[function(require,module,exports){
+},{"../../core":26}],93:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23094,7 +23593,7 @@ Object.defineProperties(ColorStepFilter.prototype, {
     }
 });
 
-},{"../../core":26}],92:[function(require,module,exports){
+},{"../../core":26}],94:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23185,7 +23684,7 @@ Object.defineProperties(ConvolutionFilter.prototype, {
     }
 });
 
-},{"../../core":26}],93:[function(require,module,exports){
+},{"../../core":26}],95:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23211,7 +23710,7 @@ CrossHatchFilter.prototype = Object.create(core.AbstractFilter.prototype);
 CrossHatchFilter.prototype.constructor = CrossHatchFilter;
 module.exports = CrossHatchFilter;
 
-},{"../../core":26}],94:[function(require,module,exports){
+},{"../../core":26}],96:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23295,7 +23794,7 @@ Object.defineProperties(DisplacementFilter.prototype, {
     }
 });
 
-},{"../../core":26}],95:[function(require,module,exports){
+},{"../../core":26}],97:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23367,7 +23866,7 @@ Object.defineProperties(DotScreenFilter.prototype, {
     }
 });
 
-},{"../../core":26}],96:[function(require,module,exports){
+},{"../../core":26}],98:[function(require,module,exports){
 var core = require('../../core');
 
 // @see https://github.com/substack/brfs/issues/25
@@ -23458,7 +23957,7 @@ Object.defineProperties(BlurYTintFilter.prototype, {
     }
 });
 
-},{"../../core":26}],97:[function(require,module,exports){
+},{"../../core":26}],99:[function(require,module,exports){
 var core = require('../../core'),
     BlurXFilter = require('../blur/BlurXFilter'),
     BlurYTintFilter = require('./BlurYTintFilter');
@@ -23651,7 +24150,7 @@ Object.defineProperties(DropShadowFilter.prototype, {
     }
 });
 
-},{"../../core":26,"../blur/BlurXFilter":87,"./BlurYTintFilter":96}],98:[function(require,module,exports){
+},{"../../core":26,"../blur/BlurXFilter":89,"./BlurYTintFilter":98}],100:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23700,7 +24199,7 @@ Object.defineProperties(GrayFilter.prototype, {
     }
 });
 
-},{"../../core":26}],99:[function(require,module,exports){
+},{"../../core":26}],101:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI filters library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -23739,7 +24238,7 @@ module.exports = {
     TwistFilter:        require('./twist/TwistFilter')
 };
 
-},{"./ascii/AsciiFilter":83,"./bloom/BloomFilter":84,"./blur/BlurDirFilter":85,"./blur/BlurFilter":86,"./blur/BlurXFilter":87,"./blur/BlurYFilter":88,"./blur/SmartBlurFilter":89,"./color/ColorMatrixFilter":90,"./color/ColorStepFilter":91,"./convolution/ConvolutionFilter":92,"./crosshatch/CrossHatchFilter":93,"./displacement/DisplacementFilter":94,"./dot/DotScreenFilter":95,"./dropshadow/DropShadowFilter":97,"./gray/GrayFilter":98,"./invert/InvertFilter":100,"./noise/NoiseFilter":101,"./pixelate/PixelateFilter":102,"./rgb/RGBSplitFilter":103,"./sepia/SepiaFilter":104,"./shockwave/ShockwaveFilter":105,"./tiltshift/TiltShiftFilter":107,"./tiltshift/TiltShiftXFilter":108,"./tiltshift/TiltShiftYFilter":109,"./twist/TwistFilter":110}],100:[function(require,module,exports){
+},{"./ascii/AsciiFilter":85,"./bloom/BloomFilter":86,"./blur/BlurDirFilter":87,"./blur/BlurFilter":88,"./blur/BlurXFilter":89,"./blur/BlurYFilter":90,"./blur/SmartBlurFilter":91,"./color/ColorMatrixFilter":92,"./color/ColorStepFilter":93,"./convolution/ConvolutionFilter":94,"./crosshatch/CrossHatchFilter":95,"./displacement/DisplacementFilter":96,"./dot/DotScreenFilter":97,"./dropshadow/DropShadowFilter":99,"./gray/GrayFilter":100,"./invert/InvertFilter":102,"./noise/NoiseFilter":103,"./pixelate/PixelateFilter":104,"./rgb/RGBSplitFilter":105,"./sepia/SepiaFilter":106,"./shockwave/ShockwaveFilter":107,"./tiltshift/TiltShiftFilter":109,"./tiltshift/TiltShiftXFilter":110,"./tiltshift/TiltShiftYFilter":111,"./twist/TwistFilter":112}],102:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23789,7 +24288,7 @@ Object.defineProperties(InvertFilter.prototype, {
     }
 });
 
-},{"../../core":26}],101:[function(require,module,exports){
+},{"../../core":26}],103:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23844,7 +24343,7 @@ Object.defineProperties(NoiseFilter.prototype, {
     }
 });
 
-},{"../../core":26}],102:[function(require,module,exports){
+},{"../../core":26}],104:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23895,7 +24394,7 @@ Object.defineProperties(PixelateFilter.prototype, {
     }
 });
 
-},{"../../core":26}],103:[function(require,module,exports){
+},{"../../core":26}],105:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -23981,7 +24480,7 @@ Object.defineProperties(RGBSplitFilter.prototype, {
     }
 });
 
-},{"../../core":26}],104:[function(require,module,exports){
+},{"../../core":26}],106:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -24031,7 +24530,7 @@ Object.defineProperties(SepiaFilter.prototype, {
     }
 });
 
-},{"../../core":26}],105:[function(require,module,exports){
+},{"../../core":26}],107:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -24119,7 +24618,7 @@ Object.defineProperties(ShockwaveFilter.prototype, {
     }
 });
 
-},{"../../core":26}],106:[function(require,module,exports){
+},{"../../core":26}],108:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -24244,7 +24743,7 @@ Object.defineProperties(TiltShiftAxisFilter.prototype, {
     }
 });
 
-},{"../../core":26}],107:[function(require,module,exports){
+},{"../../core":26}],109:[function(require,module,exports){
 var core = require('../../core'),
     TiltShiftXFilter = require('./TiltShiftXFilter'),
     TiltShiftYFilter = require('./TiltShiftYFilter');
@@ -24354,7 +24853,7 @@ Object.defineProperties(TiltShiftFilter.prototype, {
     }
 });
 
-},{"../../core":26,"./TiltShiftXFilter":108,"./TiltShiftYFilter":109}],108:[function(require,module,exports){
+},{"../../core":26,"./TiltShiftXFilter":110,"./TiltShiftYFilter":111}],110:[function(require,module,exports){
 var TiltShiftAxisFilter = require('./TiltShiftAxisFilter');
 
 /**
@@ -24392,7 +24891,7 @@ TiltShiftXFilter.prototype.updateDelta = function ()
     this.uniforms.delta.value.y = dy / d;
 };
 
-},{"./TiltShiftAxisFilter":106}],109:[function(require,module,exports){
+},{"./TiltShiftAxisFilter":108}],111:[function(require,module,exports){
 var TiltShiftAxisFilter = require('./TiltShiftAxisFilter');
 
 /**
@@ -24430,7 +24929,7 @@ TiltShiftYFilter.prototype.updateDelta = function ()
     this.uniforms.delta.value.y = dx / d;
 };
 
-},{"./TiltShiftAxisFilter":106}],110:[function(require,module,exports){
+},{"./TiltShiftAxisFilter":108}],112:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -24515,7 +25014,7 @@ Object.defineProperties(TwistFilter.prototype, {
     }
 });
 
-},{"../../core":26}],111:[function(require,module,exports){
+},{"../../core":26}],113:[function(require,module,exports){
 (function (global){
 // run the polyfills
 require('./polyfill');
@@ -24547,7 +25046,7 @@ global.PIXI = core;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./core":26,"./deprecation":75,"./extras":82,"./filters":99,"./interaction":114,"./loaders":117,"./mesh":123,"./polyfill":128}],112:[function(require,module,exports){
+},{"./core":26,"./deprecation":77,"./extras":84,"./filters":101,"./interaction":116,"./loaders":119,"./mesh":125,"./polyfill":130}],114:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -24596,7 +25095,7 @@ InteractionData.prototype.getLocalPosition = function (displayObject, point, glo
     return displayObject.toLocal(globalPos ? globalPos : this.global, point);
 };
 
-},{"../core":26}],113:[function(require,module,exports){
+},{"../core":26}],115:[function(require,module,exports){
 var core = require('../core'),
     InteractionData = require('./InteractionData');
 
@@ -25451,7 +25950,7 @@ InteractionManager.prototype.destroy = function () {
 core.WebGLRenderer.registerPlugin('interaction', InteractionManager);
 core.CanvasRenderer.registerPlugin('interaction', InteractionManager);
 
-},{"../core":26,"./InteractionData":112,"./interactiveTarget":115}],114:[function(require,module,exports){
+},{"../core":26,"./InteractionData":114,"./interactiveTarget":117}],116:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI interactions library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -25468,7 +25967,7 @@ module.exports = {
     interactiveTarget:  require('./interactiveTarget')
 };
 
-},{"./InteractionData":112,"./InteractionManager":113,"./interactiveTarget":115}],115:[function(require,module,exports){
+},{"./InteractionData":114,"./InteractionManager":115,"./interactiveTarget":117}],117:[function(require,module,exports){
 /**
  * Default property values of interactive objects
  * used by {@link PIXI.interaction.InteractionManager}.
@@ -25517,7 +26016,7 @@ var interactiveTarget = {
 
 module.exports = interactiveTarget;
 
-},{}],116:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 var Resource = require('resource-loader').Resource,
     core = require('../core'),
     extras = require('../extras'),
@@ -25637,7 +26136,7 @@ module.exports = function ()
     };
 };
 
-},{"../core":26,"../extras":82,"path":2,"resource-loader":15}],117:[function(require,module,exports){
+},{"../core":26,"../extras":84,"path":2,"resource-loader":15}],119:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI loaders library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -25658,7 +26157,7 @@ module.exports = {
     Resource:           require('resource-loader').Resource
 };
 
-},{"./bitmapFontParser":116,"./loader":118,"./spritesheetParser":119,"./textureParser":120,"resource-loader":15}],118:[function(require,module,exports){
+},{"./bitmapFontParser":118,"./loader":120,"./spritesheetParser":121,"./textureParser":122,"resource-loader":15}],120:[function(require,module,exports){
 var ResourceLoader = require('resource-loader'),
     textureParser = require('./textureParser'),
     spritesheetParser = require('./spritesheetParser'),
@@ -25720,7 +26219,7 @@ var Resource = ResourceLoader.Resource;
 
 Resource.setExtensionXhrType('fnt', Resource.XHR_RESPONSE_TYPE.DOCUMENT);
 
-},{"./bitmapFontParser":116,"./spritesheetParser":119,"./textureParser":120,"resource-loader":15}],119:[function(require,module,exports){
+},{"./bitmapFontParser":118,"./spritesheetParser":121,"./textureParser":122,"resource-loader":15}],121:[function(require,module,exports){
 var Resource = require('resource-loader').Resource,
     path = require('path'),
     core = require('../core');
@@ -25803,7 +26302,7 @@ module.exports = function ()
     };
 };
 
-},{"../core":26,"path":2,"resource-loader":15}],120:[function(require,module,exports){
+},{"../core":26,"path":2,"resource-loader":15}],122:[function(require,module,exports){
 var core = require('../core');
 
 module.exports = function ()
@@ -25825,7 +26324,7 @@ module.exports = function ()
     };
 };
 
-},{"../core":26}],121:[function(require,module,exports){
+},{"../core":26}],123:[function(require,module,exports){
 var core = require('../core'),
     tempPoint = new core.Point(),
     tempPolygon = new core.Polygon();
@@ -26294,7 +26793,7 @@ Mesh.DRAW_MODES = {
     TRIANGLES: 1
 };
 
-},{"../core":26}],122:[function(require,module,exports){
+},{"../core":26}],124:[function(require,module,exports){
 var Mesh = require('./Mesh');
 var core = require('../core');
 
@@ -26507,7 +27006,7 @@ Rope.prototype.updateTransform = function ()
     this.containerUpdateTransform();
 };
 
-},{"../core":26,"./Mesh":121}],123:[function(require,module,exports){
+},{"../core":26,"./Mesh":123}],125:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI extras library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -26525,7 +27024,7 @@ module.exports = {
     MeshShader:     require('./webgl/MeshShader')
 };
 
-},{"./Mesh":121,"./Rope":122,"./webgl/MeshRenderer":124,"./webgl/MeshShader":125}],124:[function(require,module,exports){
+},{"./Mesh":123,"./Rope":124,"./webgl/MeshRenderer":126,"./webgl/MeshShader":127}],126:[function(require,module,exports){
 var core = require('../../core'),
     Mesh = require('../Mesh');
 
@@ -26740,7 +27239,7 @@ MeshRenderer.prototype.destroy = function ()
     core.ObjectRenderer.prototype.destroy.call(this);
 };
 
-},{"../../core":26,"../Mesh":121}],125:[function(require,module,exports){
+},{"../../core":26,"../Mesh":123}],127:[function(require,module,exports){
 var core = require('../../core');
 
 /**
@@ -26801,7 +27300,7 @@ module.exports = MeshShader;
 
 core.ShaderManager.registerPlugin('meshShader', MeshShader);
 
-},{"../../core":26}],126:[function(require,module,exports){
+},{"../../core":26}],128:[function(require,module,exports){
 // References:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/sign
 
@@ -26817,7 +27316,7 @@ if (!Math.sign)
     };
 }
 
-},{}],127:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 // References:
 // https://github.com/sindresorhus/object-assign
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
@@ -26827,12 +27326,12 @@ if (!Object.assign)
     Object.assign = require('object-assign');
 }
 
-},{"object-assign":11}],128:[function(require,module,exports){
+},{"object-assign":11}],130:[function(require,module,exports){
 require('./Object.assign');
 require('./requestAnimationFrame');
 require('./Math.sign');
 
-},{"./Math.sign":126,"./Object.assign":127,"./requestAnimationFrame":129}],129:[function(require,module,exports){
+},{"./Math.sign":128,"./Object.assign":129,"./requestAnimationFrame":131}],131:[function(require,module,exports){
 (function (global){
 // References:
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
@@ -26903,7 +27402,7 @@ if (!global.cancelAnimationFrame) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}]},{},[111])(111)
+},{}]},{},[113])(113)
 });
 
 
