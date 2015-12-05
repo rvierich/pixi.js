@@ -10,7 +10,8 @@ core.interaction    = require('./interaction');
 core.loaders        = require('./loaders');
 core.mesh           = require('./mesh');
 core.accessibility  = require('./accessibility');
-
+core.mask           = require('./mask');
+  
 // export a premade loader instance
 /**
  * A premade instance of the loader that can be used to loader resources.

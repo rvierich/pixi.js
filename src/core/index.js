@@ -18,6 +18,7 @@ var core = module.exports = Object.assign(require('./const'), require('./math'),
     DisplayObject:          require('./display/DisplayObject'),
     Container:              require('./display/Container'),
 
+    
     // sprites
     Sprite:                 require('./sprites/Sprite'),
     ParticleContainer:      require('./particles/ParticleContainer'),
@@ -50,11 +51,11 @@ var core = module.exports = Object.assign(require('./const'), require('./math'),
     Shader:                 require('./renderers/webgl/shaders/Shader'),
     ObjectRenderer:         require('./renderers/webgl/utils/ObjectRenderer'),
     RenderTarget:           require('./renderers/webgl/utils/RenderTarget'),
-
+ 
     // filters - webgl
     AbstractFilter:         require('./renderers/webgl/filters/AbstractFilter'),
     FXAAFilter:             require('./renderers/webgl/filters/FXAAFilter'),
-    SpriteMaskFilter:       require('./renderers/webgl/filters/SpriteMaskFilter'),
+ //   SpriteMaskFilter:       require('./renderers/webgl/filters/SpriteMaskFilter'),
 
     /**
      * This helper function will automatically detect which renderer you should be using.

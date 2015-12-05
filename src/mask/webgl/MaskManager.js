@@ -1,5 +1,7 @@
-var WebGLManager = require('./WebGLManager'),
-    AlphaMaskFilter = require('../filters/SpriteMaskFilter');
+var WebGLManager = require('../../core/renderers/webgl/managers/WebGLManager'),
+    AlphaMaskFilter = require('./filters/SpriteMaskFilter'),
+    WebGLRenderer = require('../../core/renderers/webgl/WebGLRenderer'),
+    StencilMaskStack = require('./StencilMaskStack');
 
 /**
  * @class
@@ -15,11 +17,29 @@ function MaskManager(renderer)
     this.count = 0;
 
     this.alphaMaskPool = [];
+
+    this.maskStacks = {};
+
+    renderer.on('renderTargetChange', this.onRenderTargetChange, this);
 }
 
 MaskManager.prototype = Object.create(WebGLManager.prototype);
 MaskManager.prototype.constructor = MaskManager;
 module.exports = MaskManager;
+
+MaskManager.prototype.onRenderTargetChange = function ()
+{
+    var renderTarget = this.renderer.renderTarget;
+    var stack = this.maskStacks[renderTarget.id];
+
+    if(!stack)
+    {
+        stack = this.maskStacks[renderTarget.id] = new StencilMaskStack();
+    }
+
+    // new render target!
+    this.renderer.stencilManager.setMaskStack( stack );
+}
 
 /**
  * Applies the Mask and adds it to the current filter stack.
@@ -111,3 +131,4 @@ MaskManager.prototype.popStencilMask = function (target, maskData)
     this.renderer.stencilManager.popMask(maskData);
 };
 
+WebGLRenderer.registerPlugin('mask', MaskManager);

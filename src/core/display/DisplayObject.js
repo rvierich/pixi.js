@@ -1,6 +1,7 @@
 var math = require('../math'),
     RenderTexture = require('../textures/RenderTexture'),
     EventEmitter = require('eventemitter3'),
+    utils = require('../utils'),
     CONST = require('../const'),
     _tempMatrix = new math.Matrix(),
     _tempDisplayObjectParent = {worldTransform:new math.Matrix(), worldAlpha:1, children:[]};
@@ -148,6 +149,10 @@ function DisplayObject()
      * @private
      */
     this._mask = null;
+
+    // a map for features
+    this.featureMap = {};
+    this.features = [];
 }
 
 // constructor
@@ -216,35 +221,6 @@ Object.defineProperties(DisplayObject.prototype, {
     },
 
     /**
-     * Sets a mask for the displayObject. A mask is an object that limits the visibility of an object to the shape of the mask applied to it.
-     * In PIXI a regular mask must be a PIXI.Graphics or a PIXI.Sprite object. This allows for much faster masking in canvas as it utilises shape clipping.
-     * To remove a mask, set this property to null.
-     *
-     * @member {PIXI.Graphics|PIXI.Sprite}
-     * @memberof PIXI.DisplayObject#
-     */
-    mask: {
-        get: function ()
-        {
-            return this._mask;
-        },
-        set: function (value)
-        {
-            if (this._mask)
-            {
-                this._mask.renderable = true;
-            }
-
-            this._mask = value;
-
-            if (this._mask)
-            {
-                this._mask.renderable = false;
-            }
-        }
-    },
-
-    /**
      * Sets the filters for the displayObject.
      * * IMPORTANT: This is a webGL only feature and will be ignored by the canvas renderer.
      * To remove filters simply set this property to 'null'
@@ -255,15 +231,93 @@ Object.defineProperties(DisplayObject.prototype, {
     filters: {
         get: function ()
         {
-            return this._filters && this._filters.slice();
+            var filtersF = this.featureMap.filters;
+
+            if(filtersF)
+            {
+                return filtersF._filters.slice();
+            }
         },
         set: function (value)
         {
-            this._filters = value && value.slice();
+            var f = {
+                pre:function(displayObject, renderer){
+
+                    renderer.filterManager.pushFilter(displayObject, this.filters);
+                },
+                post:function(displayObject, renderer){
+
+                    renderer.filterManager.popFilter();
+                },
+
+                name:'filter',
+                mask:null
+            }   
+            
+            // do we already have a mask?
+            var filterF = this.featureMap.filter;
+
+            if(filterF)
+            {
+                filterF.end(this);
+
+                var index = this.children.indexOf(this.features);
+                if (index === -1)
+                {
+                    this.features.splice(index, 1);
+                }
+            }
+
+            // opti
+            if(value && value.length > 0)
+            {
+                f.filters = value.slice()
+
+                // map
+                this.featureMap.filter = f;
+                this.features.push(f)
+            }
+
+        }
+
+    }
+
+
+});
+
+
+DisplayObject.prototype.addFeature = function ( feature, id )
+{
+    id = id || feature.id;
+
+    // remove the old one!
+    this.removeFeature(id);
+
+    // add the new one
+    this.featureMap[id] = feature;
+    this.features.push(feature);
+
+    return feature;
+}
+
+DisplayObject.prototype.removeFeature = function ( id )
+{ 
+    var feature = this.featureMap[id];
+
+    if(feature)
+    {
+        var index = this.children.indexOf(this.features);
+        if (index === -1)
+        {
+            //TODO - use the fast remove function!
+            this.features.splice(index, 1);
         }
     }
 
-});
+    return feature;
+}
+
+
 
 /*
  * Updates the object transform for rendering
@@ -422,10 +476,9 @@ DisplayObject.prototype.toGlobal = function (position)
  *
  * @param position {PIXI.Point} The world origin to calculate from
  * @param [from] {PIXI.DisplayObject} The DisplayObject to calculate the global position from
- * @param [point] {PIXI.Point} A Point object in which to store the value, optional (otherwise will create a new Point)
  * @return {PIXI.Point} A point object representing the position of this object
  */
-DisplayObject.prototype.toLocal = function (position, from, point)
+DisplayObject.prototype.toLocal = function (position, from)
 {
     if (from)
     {
@@ -447,7 +500,7 @@ DisplayObject.prototype.toLocal = function (position, from, point)
     }
 
     // simply apply the matrix..
-    return this.worldTransform.applyInverse(position, point);
+    return this.worldTransform.applyInverse(position);
 };
 
 /**
@@ -518,7 +571,6 @@ DisplayObject.prototype.setParent = function (container)
  * @param [y=0] {number} The Y position
  * @param [scaleX=1] {number} The X scale value
  * @param [scaleY=1] {number} The Y scale value
- * @param [rotation=0] {number} The rotation
  * @param [skewX=0] {number} The X skew value
  * @param [skewY=0] {number} The Y skew value
  * @param [pivotX=0] {number} The X pivot value
@@ -531,7 +583,7 @@ DisplayObject.prototype.setTransform = function(x, y, scaleX, scaleY, rotation, 
     this.position.y = y || 0;
     this.scale.x = !scaleX ? 1 : scaleX;
     this.scale.y = !scaleY ? 1 : scaleY;
-    this.rotation = rotation || 0;
+    this.rotation = rotation || 0; 
     this.skew.x = skewX || 0;
     this.skew.y = skewY || 0;
     this.pivot.x = pivotX || 0;
@@ -550,7 +602,7 @@ DisplayObject.prototype.destroy = function ()
     this.scale = null;
     this.pivot = null;
     this.skew = null;
-
+    
     this.parent = null;
 
     this._bounds = null;

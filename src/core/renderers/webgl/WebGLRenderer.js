@@ -1,6 +1,5 @@
 var SystemRenderer = require('../SystemRenderer'),
     ShaderManager = require('./managers/ShaderManager'),
-    MaskManager = require('./managers/MaskManager'),
     StencilManager = require('./managers/StencilManager'),
     FilterManager = require('./managers/FilterManager'),
     BlendModeManager = require('./managers/BlendModeManager'),
@@ -98,13 +97,6 @@ function WebGLRenderer(width, height, options)
      * @member {PIXI.ShaderManager}
      */
     this.shaderManager = new ShaderManager(this);
-
-    /**
-     * Manages the masks using the stencil buffer.
-     *
-     * @member {PIXI.MaskManager}
-     */
-    this.maskManager = new MaskManager(this);
 
     /**
      * Manages the stencil buffer.
@@ -234,7 +226,6 @@ WebGLRenderer.prototype._initContext = function ()
 WebGLRenderer.prototype.render = function (object)
 {
 
-    this.emit('prerender');
 
     // no point rendering if our context has been blown up!
     if (this.gl.isContextLost())
@@ -246,6 +237,9 @@ WebGLRenderer.prototype.render = function (object)
 
     this._lastObjectRendered = object;
 
+    this.emit('prerender');
+        
+    //TODO - this can be a plugin
     if(this._useFXAA)
     {
         this._FXAAFilter[0].uniforms.resolution.value.x = this.width;
@@ -342,10 +336,12 @@ WebGLRenderer.prototype.setRenderTarget = function (renderTarget)
     {
         return;
     }
+
     // TODO - maybe down the line this should be a push pos thing? Leaving for now though.
     this.currentRenderTarget = renderTarget;
     this.currentRenderTarget.activate();
-    this.stencilManager.setMaskStack( renderTarget.stencilMaskStack );
+    
+    this.emit('renderTargetChange');
 };
 
 
@@ -514,13 +510,11 @@ WebGLRenderer.prototype.destroy = function (removeView)
 
     // destroy the managers
     this.shaderManager.destroy();
-    this.maskManager.destroy();
     this.stencilManager.destroy();
     this.filterManager.destroy();
     this.blendModeManager.destroy();
 
     this.shaderManager = null;
-    this.maskManager = null;
     this.filterManager = null;
     this.blendModeManager = null;
     this.currentRenderer = null;

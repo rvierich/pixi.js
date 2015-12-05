@@ -1,5 +1,4 @@
 var math = require('../math'),
-    utils = require('../utils'),
     DisplayObject = require('./DisplayObject'),
     RenderTexture = require('../textures/RenderTexture'),
     _tempMatrix = new math.Matrix();
@@ -27,6 +26,8 @@ function Container()
      * @readonly
      */
     this.children = [];
+
+  
 }
 
 // constructor
@@ -234,7 +235,7 @@ Container.prototype.setChildIndex = function (child, index)
 
     var currentIndex = this.getChildIndex(child);
 
-    utils.removeItems(this.children, currentIndex, 1); // remove from old position
+    this.children.splice(currentIndex, 1); //remove from old position
     this.children.splice(index, 0, child); //add at new position
     this.onChildrenChange(index);
 };
@@ -285,7 +286,7 @@ Container.prototype.removeChild = function (child)
         }
 
         child.parent = null;
-        utils.removeItems(this.children, index, 1);
+        this.children.splice(index, 1);
 
         // TODO - lets either do all callbacks or all events.. not both!
         this.onChildrenChange(index);
@@ -306,7 +307,7 @@ Container.prototype.removeChildAt = function (index)
     var child = this.getChildAt(index);
 
     child.parent = null;
-    utils.removeItems(this.children, index, 1);
+    this.children.splice(index, 1);
 
     // TODO - lets either do all callbacks or all events.. not both!
     this.onChildrenChange(index);
@@ -514,21 +515,18 @@ Container.prototype.renderWebGL = function (renderer)
 
     var i, j;
 
-    // do a quick check to see if this element has a mask or a filter.
-    if (this._mask || this._filters)
+    // mask and filters are 'features'
+    if(this.features.length)
     {
         renderer.currentRenderer.flush();
-
-        // push filter first as we need to ensure the stencil buffer is correct for any masking
-        if (this._filters && this._filters.length)
+       
+        // loop through the features and apply them..
+        for (i = 0; i < this.features.length; i++) 
         {
-            renderer.filterManager.pushFilter(this, this._filters);
-        }
+            this.features[i].pre(renderer)
+        };
 
-        if (this._mask)
-        {
-            renderer.maskManager.pushMask(this, this._mask);
-        }
+        // core render
 
         renderer.currentRenderer.start();
 
@@ -543,16 +541,12 @@ Container.prototype.renderWebGL = function (renderer)
 
         renderer.currentRenderer.flush();
 
-        if (this._mask)
+         // loop through the features and finish them
+        for ( i = this.features.length-1; i >= 0; i--) 
         {
-            renderer.maskManager.popMask(this, this._mask);
-        }
+            this.features[i].post(renderer);
+        };
 
-        if (this._filters)
-        {
-            renderer.filterManager.popFilter();
-
-        }
         renderer.currentRenderer.start();
     }
     else
@@ -565,6 +559,7 @@ Container.prototype.renderWebGL = function (renderer)
             this.children[i].renderWebGL(renderer);
         }
     }
+
 };
 
 /**

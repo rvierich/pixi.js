@@ -1,5 +1,5 @@
-var AbstractFilter = require('./AbstractFilter'),
-    math =  require('../../../math');
+var AbstractFilter = require('../../../core/renderers/webgl/filters/AbstractFilter'),
+    math =  require('../../../core/math');
 
 // @see https://github.com/substack/brfs/issues/25
 var fs = require('fs');

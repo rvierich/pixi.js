@@ -1,8 +1,6 @@
 var math = require('../../../math'),
     utils = require('../../../utils'),
-    CONST = require('../../../const'),
-    //StencilManager = require('../managers/StencilManager'),
-    StencilMaskStack = require('./StencilMaskStack');
+    CONST = require('../../../const')
 
 /**
  * @author Mat Groves http://matgroves.com/ @Doormat23
@@ -22,6 +20,8 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
 {
     //TODO Resolution could go here ( eg low res blurs )
 
+    this.id = ID_GEN++;
+    
     /**
      * The current WebGL drawing context.
      *
@@ -86,13 +86,6 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
      * @member {WebGLRenderBuffer}
      */
     this.stencilBuffer = null;
-
-    /**
-     * The data structure for the stencil masks
-     *
-     * @member {PIXI.StencilMaskStack}
-     */
-    this.stencilMaskStack = new StencilMaskStack();
 
     /**
      * Stores filter data for the render target
@@ -165,6 +158,8 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
     this.resize(width, height);
 };
 
+var ID_GEN = 0;
+
 RenderTarget.prototype.constructor = RenderTarget;
 module.exports = RenderTarget;
 
@@ -191,14 +186,13 @@ RenderTarget.prototype.clear = function(bind)
  */
 RenderTarget.prototype.attachStencilBuffer = function()
 {
-
     if (this.stencilBuffer)
     {
         return;
     }
 
     /**
-     * The stencil buffer is used for masking in pixi
+     * The stencil buffer is mostly used for masking in pixi
      * lets create one and then add attach it to the framebuffer..
      */
     if (!this.root)
