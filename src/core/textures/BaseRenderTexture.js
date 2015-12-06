@@ -61,6 +61,7 @@ function BaseRenderTexture(renderer, width, height, scaleMode, resolution)
    
     this.width = width || 100;
     this.height = height || 100;
+
     this.resolution = resolution || CONST.RESOLUTION;;
     this.scaleMode = scaleMode || CONST.SCALE_MODES.DEFAULT;
     this.hasLoaded = true;
@@ -267,8 +268,13 @@ BaseRenderTexture.prototype.renderCanvas = function (frame, displayObject, matri
         wt.append(matrix);
     }
 
-    displayObject.worldTransform = wt;
+
+    wt.tx += frame.x;
+    wt.ty += frame.y;
+
     var cachedWt = displayObject.worldTransform;
+    
+    displayObject.worldTransform = wt;
 
     // setWorld Alpha to ensure that the object is renderer at full opacity
     displayObject.worldAlpha = 1;
@@ -332,10 +338,10 @@ BaseRenderTexture.prototype.destroy = function ()
  *
  * @return {Image}
  */
-BaseRenderTexture.prototype.getImage = function ()
+BaseRenderTexture.prototype.getImage = function (frame)
 {
     var image = new Image();
-    image.src = this.getBase64();
+    image.src = this.getBase64(frame);
     return image;
 };
 
@@ -344,9 +350,9 @@ BaseRenderTexture.prototype.getImage = function ()
  *
  * @return {string} A base64 encoded string of the texture.
  */
-BaseRenderTexture.prototype.getBase64 = function ()
+BaseRenderTexture.prototype.getBase64 = function ( frame )
 {
-    return this.getCanvas().toDataURL();
+    return this.getCanvas(frame).toDataURL();
 };
 
 /**
@@ -354,22 +360,29 @@ BaseRenderTexture.prototype.getBase64 = function ()
  *
  * @return {HTMLCanvasElement} A Canvas element with the texture rendered on.
  */
-BaseRenderTexture.prototype.getCanvas = function ()
+BaseRenderTexture.prototype.getCanvas = function ( frame )
 {
+   
+
     if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
     {
-        var gl = this.renderer.gl;
-        var width = this.textureBuffer.size.width;
-        var height = this.textureBuffer.size.height;
+         if(!frame)
+        {
+            frame = tempRect;
+            frame.width = this.textureBuffer.size.width;
+            frame.height = this.textureBuffer.size.height;
+        }
 
-        var webGLPixels = new Uint8Array(4 * width * height);
+        var gl = this.renderer.gl;
+
+        var webGLPixels = new Uint8Array(4 * frame.width * frame.height);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
+        gl.readPixels(frame.x, frame.y, frame.width, frame.height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-        var tempCanvas = new CanvasBuffer(width, height);
-        var canvasData = tempCanvas.context.getImageData(0, 0, width, height);
+        var tempCanvas = new CanvasBuffer(frame.width, frame.height);
+        var canvasData = tempCanvas.context.getImageData(0, 0, frame.width, frame.height);
         canvasData.data.set(webGLPixels);
 
         tempCanvas.context.putImageData(canvasData, 0, 0);
@@ -378,7 +391,28 @@ BaseRenderTexture.prototype.getCanvas = function ()
     }
     else
     {
-        return this.textureBuffer.canvas;
+        if(!frame)
+        {
+            frame = tempRect;
+            frame.width = this.textureBuffer.canvas.width;
+            frame.height = this.textureBuffer.canvas.height;
+        }
+
+        if(frame.width === this.textureBuffer.canvas.width && 
+           frame.height === this.textureBuffer.canvas.height )
+        {
+            return this.textureBuffer.canvas;
+        }
+        else
+        {
+
+            var tempCanvas = new CanvasBuffer(frame.width, frame.height);
+            var canvasData = this.textureBuffer.context.getImageData(frame.x, frame.y, frame.width, frame.height);
+
+            tempCanvas.context.putImageData(canvasData, 0, 0);
+
+            return tempCanvas.canvas;
+        }
     }
 };
 
@@ -387,30 +421,30 @@ BaseRenderTexture.prototype.getCanvas = function ()
  *
  * @return {Uint8ClampedArray}
  */
-BaseRenderTexture.prototype.getPixels = function ()
+BaseRenderTexture.prototype.getPixels = function ( frame )
 {
-    var width, height;
+    if(!frame)
+    {
+        frame = tempRect;
+        frame.width = this.textureBuffer.size.width;
+        frame.height = this.textureBuffer.size.height;
+    }
 
     if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
     {
         var gl = this.renderer.gl;
-        width = this.textureBuffer.size.width;
-        height = this.textureBuffer.size.height;
 
-        var webGLPixels = new Uint8Array(4 * width * height);
+        var webGLPixels = new Uint8Array(4 * frame.width * frame.height);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
+        gl.readPixels(frame.x, frame.y, frame.width, frame.height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
         return webGLPixels;
     }
     else
     {
-        width = this.textureBuffer.canvas.width;
-        height = this.textureBuffer.canvas.height;
-
-        return this.textureBuffer.canvas.getContext('2d').getImageData(0, 0, width, height).data;
+        return this.textureBuffer.canvas.getContext('2d').getImageData(frame.x, frame.y, frame.width, frame.height).data;
     }
 };
 
@@ -421,22 +455,18 @@ BaseRenderTexture.prototype.getPixels = function ()
  * @param y {number} The y coordinate of the pixel to retrieve.
  * @return {Uint8ClampedArray}
  */
-BaseRenderTexture.prototype.getPixel = function (x, y)
+BaseRenderTexture.prototype.getPixel = function (frame, x, y)
 {
-    if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
+    tempRect.x = x;
+    tempRect.y = y;
+    tempRect.width = 1;
+    tempRect.height = 1;
+
+    if(frame)
     {
-        var gl = this.renderer.gl;
-
-        var webGLPixels = new Uint8Array(4);
-
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        return webGLPixels;
+        tempRect.x += frame.x;
+        tempRect.y += frame.y;
     }
-    else
-    {
-        return this.textureBuffer.canvas.getContext('2d').getImageData(x, y, 1, 1).data;
-    }
+
+    return this.getPixels(tempRect);
 };

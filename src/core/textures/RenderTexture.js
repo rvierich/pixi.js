@@ -114,6 +114,8 @@ RenderTexture.prototype.resize = function (width, height, updateBase)
     {
         this.baseTexture.resize(width, height)
     }
+
+    this._updateUvs();
 };
 
 /**
@@ -151,17 +153,6 @@ RenderTexture.prototype.render = function (displayObject, matrix, clear, updateT
     this.baseTexture.render(this.frame, displayObject, matrix, clear, updateTransform)
 };
 
-
-/**
- * Destroys this texture
- *
- * @param destroyBase {boolean} Whether to destroy the base texture as well
- */
-RenderTexture.prototype.destroy = function ()
-{
-    Texture.prototype.destroy.call(this, true);
-};
-
 /**
  * Will return a HTML Image of the texture
  *
@@ -169,7 +160,7 @@ RenderTexture.prototype.destroy = function ()
  */
 RenderTexture.prototype.getImage = function ()
 {
-    
+    return this.baseTexture.getImage(this.frame);
 };
 
 /**
@@ -179,7 +170,7 @@ RenderTexture.prototype.getImage = function ()
  */
 RenderTexture.prototype.getBase64 = function ()
 {
-    
+    return this.getBase64.getImage(this.frame);
 };
 
 /**
@@ -189,7 +180,7 @@ RenderTexture.prototype.getBase64 = function ()
  */
 RenderTexture.prototype.getCanvas = function ()
 {
-    
+    return this.baseTexture.getCanvas(this.frame);
 };
 
 /**
@@ -199,7 +190,7 @@ RenderTexture.prototype.getCanvas = function ()
  */
 RenderTexture.prototype.getPixels = function ()
 {
-    
+    return this.baseTexture.getPixels(this.frame);
 };
 
 /**
@@ -211,7 +202,7 @@ RenderTexture.prototype.getPixels = function ()
  */
 RenderTexture.prototype.getPixel = function (x, y)
 {
-    
+    return this.baseTexture.getPixel(this.frame, x, y);
 };
 
 RenderTexture.create = function(renderer, width, height, scaleMode, resolution)
