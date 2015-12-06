@@ -1,8 +1,8 @@
-var WebGLManager = require('./WebGLManager'),
-    RenderTarget = require('../utils/RenderTarget'),
+var WebGLManager = require('../../core/renderers/webgl/managers/WebGLManager'),
+    RenderTarget = require('../../core/renderers/webgl/utils/RenderTarget'),
     CONST = require('../../../const'),
-    Quad = require('../utils/Quad'),
-    math =  require('../../../math');
+    Quad = require('../../core/renderers/webgl/utils/Quad'),
+    math =  require('../../core/math');
 
 /**
  * @class
@@ -46,12 +46,40 @@ function FilterManager(renderer)
      * @member {PIXI.Rectangle}
      */
     this.currentFrame = null;
+
+    this.filterStacks = {};
+
+    renderer.on('renderTargetChange', this.onRenderTargetChange, this);
 }
 
 FilterManager.prototype = Object.create(WebGLManager.prototype);
 FilterManager.prototype.constructor = FilterManager;
 module.exports = FilterManager;
 
+FilterManager.prototype.onRenderTargetChange = function ()
+{
+    var renderTarget = this.renderer.renderTarget;
+    
+    if(renderTarget._filter)return;
+
+    var stack = this.filterStacks[renderTarget.id];
+
+    if(!stack)
+    {
+        stack = this.filterStacks[renderTarget.id] = [
+        {
+            renderTarget:renderTarget,
+            filter:[],
+            bounds:this.size
+        }
+    ];
+
+    }
+
+    // new render target!
+    this.setFilterStack( stack );
+
+}
 
 /**
  * Called when there is a WebGL context change.
@@ -252,7 +280,8 @@ FilterManager.prototype.getRenderTarget = function ( clear )
 {
     var renderTarget = this.texturePool.pop() || new RenderTarget(this.renderer.gl, this.textureSize.width, this.textureSize.height, CONST.SCALE_MODES.LINEAR, this.renderer.resolution * CONST.FILTER_RESOLUTION);
     renderTarget.frame = this.currentFrame;
-
+    renderTarget._filter = true;
+    
     if (clear)
     {
         renderTarget.clear(true);
@@ -448,3 +477,6 @@ FilterManager.prototype.destroy = function ()
 
     this.texturePool = null;
 };
+
+//TODO HOOK INTO RESIZE?
+WebGLRenderer.registerPlugin('filter', FilterManager);

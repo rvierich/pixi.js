@@ -228,6 +228,7 @@ Object.defineProperties(DisplayObject.prototype, {
      * @member {PIXI.AbstractFilter[]}
      * @memberof PIXI.DisplayObject#
      */
+    
     filters: {
         get: function ()
         {
@@ -241,41 +242,35 @@ Object.defineProperties(DisplayObject.prototype, {
         set: function (value)
         {
             var f = {
-                pre:function(displayObject, renderer){
+                pre:function(renderer){
 
-                    renderer.filterManager.pushFilter(displayObject, this.filters);
+                    renderer.filterManager.pushFilter(this.displayObject, this.filters);
                 },
-                post:function(displayObject, renderer){
+                post:function(renderer){
 
                     renderer.filterManager.popFilter();
                 },
-
-                name:'filter',
-                mask:null
+                name:'filter'
             }   
             
-            // do we already have a mask?
-            var filterF = this.featureMap.filter;
-
-            if(filterF)
+            if(value)
             {
-                filterF.end(this);
+                // TODO this will be pooled..
+                var filterFeature = f;
+                filterFeature.displayObject = this;
+                filterFeature.filters = value.slice();
+                //maskFeature.init(this, value);
 
-                var index = this.children.indexOf(this.features);
-                if (index === -1)
-                {
-                    this.features.splice(index, 1);
-                }
+                this.addFeature(filterFeature, 'filters');
             }
-
-            // opti
-            if(value && value.length > 0)
+            else
             {
-                f.filters = value.slice()
+                var filterFeature = this.removeFeature('filters');
 
-                // map
-                this.featureMap.filter = f;
-                this.features.push(f)
+                if(filterFeature)
+                {
+                   // filterFeature.end();
+                }
             }
 
         }
@@ -306,12 +301,15 @@ DisplayObject.prototype.removeFeature = function ( id )
 
     if(feature)
     {
-        var index = this.children.indexOf(this.features);
-        if (index === -1)
+        var index = this.features.indexOf(feature);
+
+        if (index !== -1)
         {
             //TODO - use the fast remove function!
             this.features.splice(index, 1);
         }
+
+        this.featureMap[id] = null;
     }
 
     return feature;

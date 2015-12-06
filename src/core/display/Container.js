@@ -527,8 +527,9 @@ Container.prototype.renderWebGL = function (renderer)
         };
 
         // core render
-
         renderer.currentRenderer.start();
+
+
 
         // add this object to the batch, only rendered if it has a texture.
         this._renderWebGL(renderer);

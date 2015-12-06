@@ -298,9 +298,7 @@ WebGLRenderer.prototype.renderDisplayObject = function (displayObject, renderTar
         renderTarget.clear();
     }
 
-    // start the filter manager
-    this.filterManager.setFilterStack( renderTarget.filterStack );
-
+    
     // render the scene!
     displayObject.renderWebGL(this);
 

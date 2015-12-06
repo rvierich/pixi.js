@@ -87,18 +87,6 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
      */
     this.stencilBuffer = null;
 
-    /**
-     * Stores filter data for the render target
-     *
-     * @member {object[]}
-     */
-    this.filterStack = [
-        {
-            renderTarget:this,
-            filter:[],
-            bounds:this.size
-        }
-    ];
 
 
     /**

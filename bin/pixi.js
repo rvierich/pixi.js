@@ -1,7 +1,7 @@
 /**
  * @license
  * pixi.js - v3.0.9-dev
- * Compiled 2015-12-05T13:38:28.842Z
+ * Compiled 2015-12-05T19:35:18.995Z
  *
  * pixi.js is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license.php
@@ -6682,8 +6682,9 @@ Container.prototype.renderWebGL = function (renderer)
         };
 
         // core render
-
         renderer.currentRenderer.start();
+
+
 
         // add this object to the batch, only rendered if it has a texture.
         this._renderWebGL(renderer);
@@ -7022,6 +7023,7 @@ Object.defineProperties(DisplayObject.prototype, {
      * @member {PIXI.AbstractFilter[]}
      * @memberof PIXI.DisplayObject#
      */
+    
     filters: {
         get: function ()
         {
@@ -7035,41 +7037,35 @@ Object.defineProperties(DisplayObject.prototype, {
         set: function (value)
         {
             var f = {
-                pre:function(displayObject, renderer){
+                pre:function(renderer){
 
-                    renderer.filterManager.pushFilter(displayObject, this.filters);
+                    renderer.filterManager.pushFilter(this.displayObject, this.filters);
                 },
-                post:function(displayObject, renderer){
+                post:function(renderer){
 
                     renderer.filterManager.popFilter();
                 },
-
-                name:'filter',
-                mask:null
+                name:'filter'
             }   
             
-            // do we already have a mask?
-            var filterF = this.featureMap.filter;
-
-            if(filterF)
+            if(value)
             {
-                filterF.end(this);
+                // TODO this will be pooled..
+                var filterFeature = f;
+                filterFeature.displayObject = this;
+                filterFeature.filters = value.slice();
+                //maskFeature.init(this, value);
 
-                var index = this.children.indexOf(this.features);
-                if (index === -1)
-                {
-                    this.features.splice(index, 1);
-                }
+                this.addFeature(filterFeature, 'filters');
             }
-
-            // opti
-            if(value && value.length > 0)
+            else
             {
-                f.filters = value.slice()
+                var filterFeature = this.removeFeature('filters');
 
-                // map
-                this.featureMap.filter = f;
-                this.features.push(f)
+                if(filterFeature)
+                {
+                   // filterFeature.end();
+                }
             }
 
         }
@@ -7100,12 +7096,15 @@ DisplayObject.prototype.removeFeature = function ( id )
 
     if(feature)
     {
-        var index = this.children.indexOf(this.features);
-        if (index === -1)
+        var index = this.features.indexOf(feature);
+
+        if (index !== -1)
         {
             //TODO - use the fast remove function!
             this.features.splice(index, 1);
         }
+
+        this.featureMap[id] = null;
     }
 
     return feature;
@@ -13490,9 +13489,7 @@ WebGLRenderer.prototype.renderDisplayObject = function (displayObject, renderTar
         renderTarget.clear();
     }
 
-    // start the filter manager
-    this.filterManager.setFilterStack( renderTarget.filterStack );
-
+    
     // render the scene!
     displayObject.renderWebGL(this);
 
@@ -14031,12 +14028,40 @@ function FilterManager(renderer)
      * @member {PIXI.Rectangle}
      */
     this.currentFrame = null;
+
+    this.filterStacks = {};
+
+    renderer.on('renderTargetChange', this.onRenderTargetChange, this);
 }
 
 FilterManager.prototype = Object.create(WebGLManager.prototype);
 FilterManager.prototype.constructor = FilterManager;
 module.exports = FilterManager;
 
+FilterManager.prototype.onRenderTargetChange = function ()
+{
+    var renderTarget = this.renderer.renderTarget;
+    
+    if(renderTarget._filter)return;
+
+    var stack = this.filterStacks[renderTarget.id];
+
+    if(!stack)
+    {
+        stack = this.filterStacks[renderTarget.id] = [
+        {
+            renderTarget:renderTarget,
+            filter:[],
+            bounds:this.size
+        }
+    ];
+
+    }
+
+    // new render target!
+    this.setFilterStack( stack );
+
+}
 
 /**
  * Called when there is a WebGL context change.
@@ -14237,7 +14262,8 @@ FilterManager.prototype.getRenderTarget = function ( clear )
 {
     var renderTarget = this.texturePool.pop() || new RenderTarget(this.renderer.gl, this.textureSize.width, this.textureSize.height, CONST.SCALE_MODES.LINEAR, this.renderer.resolution * CONST.FILTER_RESOLUTION);
     renderTarget.frame = this.currentFrame;
-
+    renderTarget._filter = true;
+    
     if (clear)
     {
         renderTarget.clear(true);
@@ -14433,6 +14459,8 @@ FilterManager.prototype.destroy = function ()
 
     this.texturePool = null;
 };
+
+//WebGLRenderer.registerPlugin('filter', MaskManager);
 
 },{"../../../const":22,"../../../math":32,"../utils/Quad":61,"../utils/RenderTarget":62,"./WebGLManager":55}],53:[function(require,module,exports){
 var WebGLManager = require('./WebGLManager'),
@@ -16093,18 +16121,6 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
      */
     this.stencilBuffer = null;
 
-    /**
-     * Stores filter data for the render target
-     *
-     * @member {object[]}
-     */
-    this.filterStack = [
-        {
-            renderTarget:this,
-            filter:[],
-            bounds:this.size
-        }
-    ];
 
 
     /**
