@@ -373,16 +373,19 @@ BaseRenderTexture.prototype.getCanvas = function ( frame )
             frame.height = this.textureBuffer.size.height;
         }
 
+        var width = frame.width * this.resolution;
+        var height = frame.height * this.resolution;
+
         var gl = this.renderer.gl;
 
-        var webGLPixels = new Uint8Array(4 * frame.width * frame.height);
+        var webGLPixels = new Uint8Array(4 * width * height);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-        gl.readPixels(frame.x, frame.y, frame.width, frame.height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
+        gl.readPixels(frame.x * this.resolution, frame.y * this.resolution, width, height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-        var tempCanvas = new CanvasBuffer(frame.width, frame.height);
-        var canvasData = tempCanvas.context.getImageData(0, 0, frame.width, frame.height);
+        var tempCanvas = new CanvasBuffer(width, height);
+        var canvasData = tempCanvas.context.getImageData(0, 0, width, height);
         canvasData.data.set(webGLPixels);
 
         tempCanvas.context.putImageData(canvasData, 0, 0);
@@ -406,8 +409,10 @@ BaseRenderTexture.prototype.getCanvas = function ( frame )
         else
         {
 
-            var tempCanvas = new CanvasBuffer(frame.width, frame.height);
-            var canvasData = this.textureBuffer.context.getImageData(frame.x, frame.y, frame.width, frame.height);
+            var resolution = this.resolution;
+
+            var tempCanvas = new CanvasBuffer(frame.width * resolution, frame.height * resolution);
+            var canvasData = this.textureBuffer.context.getImageData(frame.x  * resolution, frame.y * resolution, frame.width * resolution, frame.height * resolution);
 
             tempCanvas.context.putImageData(canvasData, 0, 0);
 
@@ -430,21 +435,24 @@ BaseRenderTexture.prototype.getPixels = function ( frame )
         frame.height = this.textureBuffer.size.height;
     }
 
+    var width = frame.width * this.resolution;
+    var height = frame.height * this.resolution;
+
     if (this.renderer.type === CONST.RENDERER_TYPE.WEBGL)
     {
         var gl = this.renderer.gl;
 
-        var webGLPixels = new Uint8Array(4 * frame.width * frame.height);
+        var webGLPixels = new Uint8Array(4 * width * height);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.textureBuffer.frameBuffer);
-        gl.readPixels(frame.x, frame.y, frame.width, frame.height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
+        gl.readPixels(frame.x * this.resolution, frame.y * this.resolution, width, height, gl.RGBA, gl.UNSIGNED_BYTE, webGLPixels);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
         return webGLPixels;
     }
     else
     {
-        return this.textureBuffer.canvas.getContext('2d').getImageData(frame.x, frame.y, frame.width, frame.height).data;
+        return this.textureBuffer.canvas.getContext('2d').getImageData(frame.x * this.resolution, frame.y * this.resolution, width, height).data;
     }
 };
 
@@ -459,8 +467,8 @@ BaseRenderTexture.prototype.getPixel = function (frame, x, y)
 {
     tempRect.x = x;
     tempRect.y = y;
-    tempRect.width = 1;
-    tempRect.height = 1;
+    tempRect.width = 1 / this.resolution;
+    tempRect.height = 1 / this.resolution;
 
     if(frame)
     {
