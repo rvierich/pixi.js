@@ -1,6 +1,6 @@
 var core = require('../../core'),
-    Mesh = require('../Mesh');
-
+    Mesh = require('../Mesh'),
+    VAO = require('../../core/renderers/webgl/utils/VAO')
 /**
  * @author Mat Groves
  *
@@ -61,6 +61,7 @@ core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
  */
 MeshRenderer.prototype.onContextChange = function ()
 {
+    this.vao = new VAO(this.renderer.gl);
 
 };
 
