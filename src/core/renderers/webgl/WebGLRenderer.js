@@ -233,6 +233,9 @@ WebGLRenderer.prototype._initContext = function ()
  */
 WebGLRenderer.prototype.render = function (object)
 {
+
+    this.emit('prerender');
+
     // no point rendering if our context has been blown up!
     if (this.gl.isContextLost())
     {
@@ -279,6 +282,8 @@ WebGLRenderer.prototype.render = function (object)
     }
 
     this.renderDisplayObject(object, this.renderTarget);//this.projection);
+
+    this.emit('postrender');
 };
 
 /**
@@ -444,7 +449,7 @@ WebGLRenderer.prototype.destroyTexture = function (texture, _skipRemove)
         {
             var i = this._managedTextures.indexOf(texture);
             if (i !== -1) {
-                this._managedTextures.splice(i, 1);
+                utils.removeItems(this._managedTextures, i, 1);
             }
         }
     }
