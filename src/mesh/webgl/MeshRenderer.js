@@ -1,6 +1,8 @@
 var core = require('../../core'),
     Mesh = require('../Mesh'),
-    VAO = require('../../core/renderers/webgl/utils/VAO')
+    VertexArrayObject = require('../../core/renderers/webgl/utils/VertexArrayObject'),
+    Buffer = require('../../core/renderers/webgl/utils/Buffer'),
+    Shader = require('../../core/renderers/webgl/utils/Shader')
 /**
  * @author Mat Groves
  *
@@ -45,6 +47,8 @@ function MeshRenderer(renderer)
     }
 
     this.currentShader = null;
+
+    this.firstRun = true;
 }
 
 MeshRenderer.prototype = Object.create(core.ObjectRenderer.prototype);
@@ -61,8 +65,7 @@ core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
  */
 MeshRenderer.prototype.onContextChange = function ()
 {
-    this.vao = new VAO(this.renderer.gl);
-
+    
 };
 
 /**
@@ -72,20 +75,145 @@ MeshRenderer.prototype.onContextChange = function ()
  */
 MeshRenderer.prototype.render = function (mesh)
 {
-    if(!mesh._vertexBuffer)
-    {
-        this._initWebGL(mesh);
-    }
-
     var renderer = this.renderer,
         gl = renderer.gl,
         texture = mesh._texture.baseTexture,
         shader = mesh.shader;// || renderer.shaderManager.plugins.meshShader;
 
-    var drawMode = mesh.drawMode === Mesh.DRAW_MODES.TRIANGLE_MESH ? gl.TRIANGLE_STRIP : gl.TRIANGLES;
+    shader = renderer.shaderManager.plugins.meshShader;
+
+   
+
+    if(this.firstRun)
+    {
+        var vert = [
+
+            'struct my_little_struct {',
+            '  float key;',
+            '};',
+
+            'struct my_struct {',
+            '  float mat;',
+            '  my_little_struct g;',
+            '  float b;',
+            '  float a;',
+            '};',
+
+
+
+            'precision lowp float;',
+            'attribute vec2 aVertexPosition;',
+            'attribute vec2 aTextureCoord;',
+            'attribute vec4 aColor;',
+
+            'uniform mat3 projectionMatrix;',
+            'uniform vec2 xxx;',
+            'uniform my_struct xst;',
+
+            'varying vec2 vTextureCoord;',
+            'varying vec4 vColor;',
+
+            'void main(void){',
+            '   gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);',
+            '   vTextureCoord = aTextureCoord + xst.mat;',
+            '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
+            '}'
+        ].join('\n');
+
+        var frag = [
+            'precision lowp float;',
+
+            'varying vec2 vTextureCoord;',
+            'varying vec4 vColor;',
+
+            'uniform sampler2D uSampler;',
+
+            'void main(void){',
+            '   gl_FragColor = texture2D(uSampler, vTextureCoord) * vColor ;',
+            '}'
+        ].join('\n');
+
+        var shaderNew = new Shader(gl, vert, frag);
+
+        //shaderNew.uniforms.vColor = thing
+      //  var attributes = Shader.extractAttributes(src);
+        
+       // var vUniforms = Shader.extractUniforms(src);
+       // var fUniforms = Shader.extractUniforms(frag);
+
+    //    uniforms = Object.assign( fUniforms, vUniforms );
+
+      //  console.log(attributes);
+        //console.log(vUniforms);
+
+        this.firstRun = false;
+
+        this.indexBuffer = new Buffer.createIndexBuffer(gl);
+
+        this.verticesBuffer = new Buffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
+        this.uvsBuffer = new Buffer.createVertexBuffer(gl);
+
+        this.vao = new VertexArrayObject(gl);
+
+        this.vao.addIndex(this.indexBuffer);   
+
+        this.vao.addAttribute(this.verticesBuffer, {
+           attrib:shader.attributes.aVertexPosition,
+        });
+
+        this.vao.addAttribute(this.uvsBuffer, {
+           attrib:shader.attributes.aTextureCoord,
+        });
+
+        this.indexBuffer.upload(mesh.indices);
+
+         
+    }
 
     renderer.blendModeManager.setBlendMode(mesh.blendMode);
 
+
+    this.renderer.shaderManager.setShader(shader);
+    shader.uniforms.translationMatrix.value = mesh.worldTransform.toArray(true);
+    shader.uniforms.projectionMatrix.value = renderer.currentRenderTarget.projectionMatrix.toArray(true);
+    shader.uniforms.alpha.value = mesh.worldAlpha;
+
+    shader.syncUniforms();
+
+    gl.activeTexture(gl.TEXTURE0);
+
+    if (!texture._glTextures[gl.id])
+    {
+        this.renderer.updateTexture(texture);
+    }
+    else
+    {
+        // bind the current texture
+        gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
+    }
+
+   
+   
+    
+    if (mesh.dirty)
+    {
+        mesh.dirty = false;
+        this.uvsBuffer.upload(mesh.uvs);    
+    }
+    
+
+    // bind the vao and render the mesh!
+    this.vao.bind();
+
+    this.verticesBuffer.upload(mesh.vertices);
+    
+    var drawMode = mesh.drawMode === Mesh.DRAW_MODES.TRIANGLE_MESH ? gl.TRIANGLE_STRIP : gl.TRIANGLES;
+    gl.drawElements(drawMode, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
+
+    return;
+
+
+  
     //TODO cache custom state..
     if (!shader)
     {
@@ -95,108 +223,7 @@ MeshRenderer.prototype.render = function (mesh)
     {
         shader = shader.shaders[gl.id] || shader.getShader(renderer);// : shader;
     }
-
-    this.renderer.shaderManager.setShader(shader);
-
-    shader.uniforms.translationMatrix.value = mesh.worldTransform.toArray(true);
-    shader.uniforms.projectionMatrix.value = renderer.currentRenderTarget.projectionMatrix.toArray(true);
-    shader.uniforms.alpha.value = mesh.worldAlpha;
-
-    shader.syncUniforms();
-
-    if (!mesh.dirty)
-    {
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, mesh._vertexBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, mesh.vertices);
-        gl.vertexAttribPointer(shader.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-
-        // update the uvs
-        gl.bindBuffer(gl.ARRAY_BUFFER, mesh._uvBuffer);
-        gl.vertexAttribPointer(shader.attributes.aTextureCoord, 2, gl.FLOAT, false, 0, 0);
-
-
-        gl.activeTexture(gl.TEXTURE0);
-
-       if (!texture._glTextures[gl.id])
-        {
-            this.renderer.updateTexture(texture);
-        }
-        else
-        {
-            // bind the current texture
-            gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
-        }
-
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh._indexBuffer);
-        gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, mesh.indices);
-    }
-    else
-    {
-
-        mesh.dirty = false;
-        gl.bindBuffer(gl.ARRAY_BUFFER, mesh._vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(shader.attributes.aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-
-        // update the uvs
-        gl.bindBuffer(gl.ARRAY_BUFFER, mesh._uvBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.uvs, gl.STATIC_DRAW);
-        gl.vertexAttribPointer(shader.attributes.aTextureCoord, 2, gl.FLOAT, false, 0, 0);
-
-         gl.activeTexture(gl.TEXTURE0);
-
-        if (!texture._glTextures[gl.id])
-        {
-            this.renderer.updateTexture(texture);
-        }
-        else
-        {
-            // bind the current texture
-            gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
-        }
-
-        // dont need to upload!
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh._indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
-
-    }
-
-    gl.drawElements(drawMode, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
-
 };
-
-/**
- * Prepares all the buffers to render this mesh
- * @param mesh {PIXI.mesh.Mesh} the mesh to render
- */
-MeshRenderer.prototype._initWebGL = function (mesh)
-{
-    // build the strip!
-    var gl = this.renderer.gl;
-
-    mesh._vertexBuffer = gl.createBuffer();
-    mesh._indexBuffer = gl.createBuffer();
-    mesh._uvBuffer = gl.createBuffer();
-
-
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh._vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.DYNAMIC_DRAW);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh._uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER,  mesh.uvs, gl.STATIC_DRAW);
-
-    if(mesh.colors){
-        mesh._colorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, mesh._colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, mesh.colors, gl.STATIC_DRAW);
-    }
-
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh._indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
-};
-
 
 /**
  * Empties the current batch.
