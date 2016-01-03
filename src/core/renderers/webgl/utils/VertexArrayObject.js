@@ -1,3 +1,6 @@
+
+var setVertexAttribArrays = require('./setVertexAttribArrays');
+
 /**
  * Generic Mask Stack data structure
  * @class
@@ -24,6 +27,8 @@ function VertexArrayObject(gl)
 	this.indexBuffer = null;
 
 	this.dirty = false;
+
+	
 }
 
 VertexArrayObject.prototype.constructor = VertexArrayObject;
@@ -63,13 +68,15 @@ VertexArrayObject.prototype.activate = function()
 {
 	var gl = this.gl;
 
+
 	for (var i = 0; i < this.attributes.length; i++) 
 	{
 		var attrib = this.attributes[i];
-		attrib.buffer.bind();
-		gl.enableVertexAttribArray(attrib.attribute);
+		attrib.buffer.bind();	
 		gl.vertexAttribPointer(attrib.attribute, 2, gl.FLOAT, false, 0, 0); 
 	};
+
+	setVertexAttribArrays(gl, this.attributes);
 
 	this.indexBuffer.bind();
 }

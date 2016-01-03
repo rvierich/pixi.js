@@ -1,7 +1,9 @@
 
 var generateUniformAccessObject = function(gl, uniformData)
 {
-    uniforms = {data:{}};
+    // this is the object we will be sending back.
+    // an object hierachy will be created for structs
+    var uniforms = {data:{}};
 
     uniforms.gl = gl;
     
@@ -20,8 +22,6 @@ var generateUniformAccessObject = function(gl, uniformData)
         uniformGroup.data[name] = uniform;
 
         uniformGroup.gl = gl;
-
-
 
         Object.defineProperty(uniformGroup, name, {
             get: generateGetter(name),
@@ -57,8 +57,6 @@ var generateSetter = function(name, uniform)
         template += "\nthis.gl." + setTemplate + ";";
     }
 
-    console.log(template)
-
   	return new Function('value', template);
 }
 
@@ -82,8 +80,7 @@ var getterTemplate = [
 
 var setterTemplate = [
     'this.data.%%.value = value;',
-    'var location = this.data.%%.location;',
-    'console.log(location)',
+    'var location = this.data.%%.location;'
 ].join('\n');
 
 

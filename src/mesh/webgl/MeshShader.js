@@ -1,4 +1,5 @@
-var core = require('../../core');
+var core = require('../../core'),
+    Shader = require('../../core/renderers/webgl/utils/Shader');
 
 /**
  * @class
@@ -6,10 +7,10 @@ var core = require('../../core');
  * @memberof PIXI.mesh
  * @param shaderManager {PIXI.ShaderManager} The WebGL shader manager this shader works for.
  */
-function MeshShader(shaderManager)
+function MeshShader(gl)
 {
-    core.Shader.call(this,
-        shaderManager,
+    Shader.call(this,
+        gl,
         // vertex shader
         [
             'precision lowp float;',
@@ -37,23 +38,11 @@ function MeshShader(shaderManager)
             'void main(void){',
             '   gl_FragColor = texture2D(uSampler, vTextureCoord) * alpha ;',
             '}'
-        ].join('\n'),
-        // custom uniforms
-        {
-            alpha:  { type: '1f', value: 0 },
-            translationMatrix: { type: 'mat3', value: new Float32Array(9) },
-            projectionMatrix: { type: 'mat3', value: new Float32Array(9) }
-        },
-        // custom attributes
-        {
-            aVertexPosition:0,
-            aTextureCoord:0
-        }
+        ].join('\n')
     );
 }
 
-MeshShader.prototype = Object.create(core.Shader.prototype);
+MeshShader.prototype = Object.create(Shader.prototype);
 MeshShader.prototype.constructor = MeshShader;
 module.exports = MeshShader;
 
-core.ShaderManager.registerPlugin('meshShader', MeshShader);

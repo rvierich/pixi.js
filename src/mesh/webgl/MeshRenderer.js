@@ -2,7 +2,8 @@ var core = require('../../core'),
     Mesh = require('../Mesh'),
     VertexArrayObject = require('../../core/renderers/webgl/utils/VertexArrayObject'),
     Buffer = require('../../core/renderers/webgl/utils/Buffer'),
-    Shader = require('../../core/renderers/webgl/utils/Shader')
+    Shader = require('../../core/renderers/webgl/utils/Shader'),
+    MeshShader = require('./MeshShader')
 /**
  * @author Mat Groves
  *
@@ -75,78 +76,17 @@ MeshRenderer.prototype.onContextChange = function ()
  */
 MeshRenderer.prototype.render = function (mesh)
 {
+
     var renderer = this.renderer,
         gl = renderer.gl,
-        texture = mesh._texture.baseTexture,
-        shader = mesh.shader;// || renderer.shaderManager.plugins.meshShader;
-
-    shader = renderer.shaderManager.plugins.meshShader;
-
-   
+        texture = mesh._texture.baseTexture;
 
     if(this.firstRun)
     {
-        var vert = [
-
-            'struct my_little_struct {',
-            '  float key;',
-            '};',
-
-            'struct my_struct {',
-            '  float mat;',
-            '  my_little_struct g;',
-            '  float b;',
-            '  float a;',
-            '};',
-
-
-
-            'precision lowp float;',
-            'attribute vec2 aVertexPosition;',
-            'attribute vec2 aTextureCoord;',
-            'attribute vec4 aColor;',
-
-            'uniform mat3 projectionMatrix;',
-            'uniform vec2 xxx;',
-            'uniform my_struct xst;',
-
-            'varying vec2 vTextureCoord;',
-            'varying vec4 vColor;',
-
-            'void main(void){',
-            '   gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);',
-            '   vTextureCoord = aTextureCoord + xst.mat;',
-            '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
-            '}'
-        ].join('\n');
-
-        var frag = [
-            'precision lowp float;',
-
-            'varying vec2 vTextureCoord;',
-            'varying vec4 vColor;',
-
-            'uniform sampler2D uSampler;',
-
-            'void main(void){',
-            '   gl_FragColor = texture2D(uSampler, vTextureCoord) * vColor ;',
-            '}'
-        ].join('\n');
-
-        var shaderNew = new Shader(gl, vert, frag);
-
-        //shaderNew.uniforms.vColor = thing
-      //  var attributes = Shader.extractAttributes(src);
-        
-       // var vUniforms = Shader.extractUniforms(src);
-       // var fUniforms = Shader.extractUniforms(frag);
-
-    //    uniforms = Object.assign( fUniforms, vUniforms );
-
-      //  console.log(attributes);
-        //console.log(vUniforms);
-
         this.firstRun = false;
+
+        this.shader = new MeshShader(gl);
+
 
         this.indexBuffer = new Buffer.createIndexBuffer(gl);
 
@@ -158,11 +98,11 @@ MeshRenderer.prototype.render = function (mesh)
         this.vao.addIndex(this.indexBuffer);   
 
         this.vao.addAttribute(this.verticesBuffer, {
-           attrib:shader.attributes.aVertexPosition,
+           attrib:this.shader.attributes.aVertexPosition.location,
         });
 
         this.vao.addAttribute(this.uvsBuffer, {
-           attrib:shader.attributes.aTextureCoord,
+           attrib:this.shader.attributes.aTextureCoord.location,
         });
 
         this.indexBuffer.upload(mesh.indices);
@@ -170,15 +110,17 @@ MeshRenderer.prototype.render = function (mesh)
          
     }
 
+   // return;
+
     renderer.blendModeManager.setBlendMode(mesh.blendMode);
 
+    var shader = this.shader;
 
-    this.renderer.shaderManager.setShader(shader);
-    shader.uniforms.translationMatrix.value = mesh.worldTransform.toArray(true);
-    shader.uniforms.projectionMatrix.value = renderer.currentRenderTarget.projectionMatrix.toArray(true);
-    shader.uniforms.alpha.value = mesh.worldAlpha;
+    shader.bind();
 
-    shader.syncUniforms();
+    shader.uniforms.translationMatrix = mesh.worldTransform.toArray(true);
+    shader.uniforms.projectionMatrix = renderer.currentRenderTarget.projectionMatrix.toArray(true);
+    shader.uniforms.alpha = mesh.worldAlpha;
 
     gl.activeTexture(gl.TEXTURE0);
 
@@ -191,10 +133,7 @@ MeshRenderer.prototype.render = function (mesh)
         // bind the current texture
         gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
     }
-
-   
-   
-    
+ 
     if (mesh.dirty)
     {
         mesh.dirty = false;
@@ -210,19 +149,9 @@ MeshRenderer.prototype.render = function (mesh)
     var drawMode = mesh.drawMode === Mesh.DRAW_MODES.TRIANGLE_MESH ? gl.TRIANGLE_STRIP : gl.TRIANGLES;
     gl.drawElements(drawMode, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
 
-    return;
-
 
   
     //TODO cache custom state..
-    if (!shader)
-    {
-        shader = renderer.shaderManager.plugins.meshShader;
-    }
-    else
-    {
-        shader = shader.shaders[gl.id] || shader.getShader(renderer);// : shader;
-    }
 };
 
 /**
