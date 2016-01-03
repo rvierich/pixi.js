@@ -3,6 +3,7 @@ var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     CONST = require('../../const'),
     VertexArrayObject = require('../../renderers/webgl/utils/VertexArrayObject'),
     TextureShader = require('../../renderers/webgl/shaders/_TextureShader'),
+    createIndicesForQuads = require('../../renderers/webgl/utils/createIndicesForQuads'),
     GLBuffer = require('../../renderers/webgl/utils/Buffer');
 
 /**
@@ -83,18 +84,7 @@ function SpriteRenderer(renderer)
      *
      * @member {Uint16Array}
      */
-    this.indices = new Uint16Array(numIndices);
-
-    // fill the indices with the quads to draw
-    for (var i=0, j=0; i < numIndices; i += 6, j += 4)
-    {
-        this.indices[i + 0] = j + 0;
-        this.indices[i + 1] = j + 1;
-        this.indices[i + 2] = j + 2;
-        this.indices[i + 3] = j + 0;
-        this.indices[i + 4] = j + 2;
-        this.indices[i + 5] = j + 3;
-    }
+    this.indices = createIndicesForQuads(this.size);
 
     /**
      * The current size of the batch, each render() call adds to this number.
