@@ -2,6 +2,7 @@ var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
     CONST = require('../../const'),
     VertexArrayObject = require('../../renderers/webgl/utils/VertexArrayObject'),
+    TextureShader = require('../../renderers/webgl/shaders/_TextureShader'),
     GLBuffer = require('../../renderers/webgl/utils/Buffer');
 
 /**
@@ -146,35 +147,36 @@ SpriteRenderer.prototype.onContextChange = function ()
     var indexBuffer = new GLBuffer.createIndexBuffer(gl, null, gl.STATIC_DRAW);
     indexBuffer.upload(this.indices);
     
-    this._verticesBuffer = new GLBuffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
-   
+    this.verticesBuffer = new GLBuffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
+    
+    this._shader = new TextureShader(gl);
+
+    // build and populate a vbo...
+
     this.vao = new VertexArrayObject(gl);
 
     this.vao.addIndex(indexBuffer);   
+        
+    this.vao.addAttribute(this.verticesBuffer
+                         ,this._shader.attributes.aVertexPosition
+                         ,gl.FLOAT
+                         ,this.vertByteSize
+                         ,false
+                         ,0);
 
-    // this is the same for each shader?
-    var stride =  this.vertByteSize;
-       
-    this.vao.addAttribute(this._verticesBuffer, {
-       attrib:this.shader.attributes.aVertexPosition,
-       stride:stride
-    });
+    this.vao.addAttribute(this.verticesBuffer
+                         ,this._shader.attributes.aTextureCoord
+                         ,gl.FLOAT
+                         ,this.vertByteSize
+                         ,false
+                         ,2 * 4);
 
-    this.vao.addAttribute(this._verticesBuffer, {
-       attrib:this.shader.attributes.aTextureCoord,
-       stride:stride,
-       start:2 * 4
-    });
-
-    this.vao.addAttribute(this._verticesBuffer, {
-       attrib:this.shader.attributes.aColor,
-       stride:stride,
-       size:4,
-       type:gl.UNSIGNED_BYTE,
-       normalized:true,
-       start:4 * 4
-    });
-
+    this.vao.addAttribute(this.verticesBuffer 
+                         ,this._shader.attributes.aColor
+                         ,gl.UNSIGNED_BYTE
+                         ,this.vertByteSize
+                         ,true
+                         ,4 * 4);
 };
 
 /**
@@ -326,12 +328,12 @@ SpriteRenderer.prototype.flush = function ()
     // upload the verts to the buffer
     if (this.currentBatchSize > ( this.size * 0.5 ) )
     {
-        this._verticesBuffer.upload(this.vertices);
+        this.verticesBuffer.upload(this.vertices);
     }
     else
     {
         var view = this.positions.subarray(0, this.currentBatchSize * this.vertByteSize);
-        this._verticesBuffer.upload(view);
+        this.verticesBuffer.upload(view);
     }
 
     var nextTexture, nextBlendMode, nextShader;
@@ -387,12 +389,12 @@ SpriteRenderer.prototype.flush = function ()
                 }
 
                 // set shader function???
-                this.renderer.shaderManager.setShader(shader);
+              //  this.renderer.shaderManager.setShader(shader);
 
                 //TODO - i KNOW this can be optimised! Once v3 is stable il look at this next...
-                shader.uniforms.projectionMatrix.value = this.renderer.currentRenderTarget.projectionMatrix.toArray(true);
+                this._shader.uniforms.projectionMatrix = this.renderer.currentRenderTarget.projectionMatrix.toArray(true);
                 //Make this a little more dynamic / intelligent!
-                shader.syncUniforms();
+//                shader.syncUniforms();
 
                 //TODO investigate some kind of texture state managment??
                 // need to make sure this texture is the active one for all the batch swaps..
@@ -457,7 +459,9 @@ SpriteRenderer.prototype.renderBatch = function (texture, size, startIndex)
 SpriteRenderer.prototype.start = function ()
 {
     var gl = this.renderer.gl;
-    this.vao.bind();    
+    
+    this.vao.bind();
+    this._shader.bind();
 };
 
 /**
@@ -466,8 +470,8 @@ SpriteRenderer.prototype.start = function ()
  */
 SpriteRenderer.prototype.destroy = function ()
 {
-    this.renderer.gl.deleteBuffer(this.vertexBuffer);
-    this.renderer.gl.deleteBuffer(this.indexBuffer);
+    //this.renderer.gl.deleteBuffer(this.vertexBuffer);
+    //this.renderer.gl.deleteBuffer(this.indexBuffer);
 
     ObjectRenderer.prototype.destroy.call(this);
 

@@ -1,5 +1,6 @@
 
 var mapType = require('./mapType');
+var mapSize = require('./mapSize');
 
 var extractAttributes = function(gl, program)
 {
@@ -10,9 +11,11 @@ var extractAttributes = function(gl, program)
     for (var i = 0; i < totalAttributes; i++) 
     {
         var attribData = gl.getActiveAttrib(program, i);
+        var type = mapType(gl, attribData.type);
 
         attributes[attribData.name] = {
-            type:mapType(gl, attribData.type),
+            type:type,
+            size:mapSize(type),
             location:gl.getAttribLocation(program, attribData.name)
         }
     };

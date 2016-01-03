@@ -31,7 +31,7 @@ var setVertexAttribArrays = function (gl, attribs)
     // set the new attribs
     for (i = 0; i < attribs.length; i++)
     {
-        tempAttribState[attribs[i].attribute.location] = true;
+        tempAttribState[attribs[i].attribute] = true;
     }
 
     for (i = 0; i < attribState.length; i++)
