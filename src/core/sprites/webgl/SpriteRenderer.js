@@ -1,6 +1,8 @@
 var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
-    CONST = require('../../const');
+    CONST = require('../../const'),
+    VertexArrayObject = require('../../renderers/webgl/utils/VertexArrayObject'),
+    GLBuffer = require('../../renderers/webgl/utils/Buffer');
 
 /**
  * @author Mat Groves
@@ -113,6 +115,8 @@ function SpriteRenderer(renderer)
      * @member {PIXI.Shader}
      */
     this.shader = null;
+
+   
 }
 
 SpriteRenderer.prototype = Object.create(ObjectRenderer.prototype);
@@ -135,17 +139,42 @@ SpriteRenderer.prototype.onContextChange = function ()
     this.shader = this.renderer.shaderManager.defaultShader;
 
     // create a couple of buffers
-    this.vertexBuffer = gl.createBuffer();
-    this.indexBuffer = gl.createBuffer();
-
-    //upload the index data
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.vertices, gl.DYNAMIC_DRAW);
-
     this.currentBlendMode = 99999;
+
+
+    /// new 
+    var indexBuffer = new GLBuffer.createIndexBuffer(gl, null, gl.STATIC_DRAW);
+    indexBuffer.upload(this.indices);
+    
+    this._verticesBuffer = new GLBuffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
+   
+    this.vao = new VertexArrayObject(gl);
+
+    this.vao.addIndex(indexBuffer);   
+
+    // this is the same for each shader?
+    var stride =  this.vertByteSize;
+       
+    this.vao.addAttribute(this._verticesBuffer, {
+       attrib:this.shader.attributes.aVertexPosition,
+       stride:stride
+    });
+
+    this.vao.addAttribute(this._verticesBuffer, {
+       attrib:this.shader.attributes.aTextureCoord,
+       stride:stride,
+       start:2 * 4
+    });
+
+    this.vao.addAttribute(this._verticesBuffer, {
+       attrib:this.shader.attributes.aColor,
+       stride:stride,
+       size:4,
+       type:gl.UNSIGNED_BYTE,
+       normalized:true,
+       start:4 * 4
+    });
+
 };
 
 /**
@@ -293,15 +322,16 @@ SpriteRenderer.prototype.flush = function ()
     var gl = this.renderer.gl;
     var shader;
 
+    
     // upload the verts to the buffer
     if (this.currentBatchSize > ( this.size * 0.5 ) )
     {
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.vertices);
+        this._verticesBuffer.upload(this.vertices);
     }
     else
     {
         var view = this.positions.subarray(0, this.currentBatchSize * this.vertByteSize);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, view);
+        this._verticesBuffer.upload(view);
     }
 
     var nextTexture, nextBlendMode, nextShader;
@@ -409,7 +439,8 @@ SpriteRenderer.prototype.renderBatch = function (texture, size, startIndex)
     else
     {
         // bind the current texture
-        gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
+        // gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);  
+        texture._glTextures[gl.id].bind();
     }
 
     // now draw those suckas!
@@ -426,21 +457,7 @@ SpriteRenderer.prototype.renderBatch = function (texture, size, startIndex)
 SpriteRenderer.prototype.start = function ()
 {
     var gl = this.renderer.gl;
-
-    // bind the main texture
-
-
-    // bind the buffers
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-
-    // this is the same for each shader?
-    var stride =  this.vertByteSize;
-    gl.vertexAttribPointer(this.shader.attributes.aVertexPosition, 2, gl.FLOAT, false, stride, 0);
-    gl.vertexAttribPointer(this.shader.attributes.aTextureCoord, 2, gl.FLOAT, false, stride, 2 * 4);
-
-    // color attributes will be interpreted as unsigned bytes and normalized
-    gl.vertexAttribPointer(this.shader.attributes.aColor, 4, gl.UNSIGNED_BYTE, true, stride, 4 * 4);
+    this.vao.bind();    
 };
 
 /**

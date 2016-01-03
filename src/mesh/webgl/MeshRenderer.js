@@ -98,11 +98,11 @@ MeshRenderer.prototype.render = function (mesh)
         this.vao.addIndex(this.indexBuffer);   
 
         this.vao.addAttribute(this.verticesBuffer, {
-           attrib:this.shader.attributes.aVertexPosition.location,
+           attrib:this.shader.attributes.aVertexPosition.location
         });
 
         this.vao.addAttribute(this.uvsBuffer, {
-           attrib:this.shader.attributes.aTextureCoord.location,
+           attrib:this.shader.attributes.aTextureCoord.location
         });
 
         this.indexBuffer.upload(mesh.indices);
@@ -131,7 +131,7 @@ MeshRenderer.prototype.render = function (mesh)
     else
     {
         // bind the current texture
-        gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
+        texture._glTextures[gl.id].bind();
     }
  
     if (mesh.dirty)

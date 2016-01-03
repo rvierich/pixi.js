@@ -68,12 +68,11 @@ VertexArrayObject.prototype.activate = function()
 {
 	var gl = this.gl;
 
-
 	for (var i = 0; i < this.attributes.length; i++) 
 	{
 		var attrib = this.attributes[i];
 		attrib.buffer.bind();	
-		gl.vertexAttribPointer(attrib.attribute, 2, gl.FLOAT, false, 0, 0); 
+		gl.vertexAttribPointer(attrib.attribute, attrib.size, attrib.type, attrib.normalized, attrib.stride, attrib.start); 
 	};
 
 	setVertexAttribArrays(gl, this.attributes);
@@ -86,9 +85,11 @@ VertexArrayObject.prototype.addAttribute = function(buffer, options)
     this.attributes.push({
     	buffer:buffer,
     	attribute:options.attrib,
-	 	size:2,
-	 	stride:0,
-	 	start:0
+	 	type:options.type || this.gl.FLOAT,
+	 	size:options.size || 2,
+	 	stride:options.stride || 0,
+	 	normalized:options.normalized || false,
+	 	start:options.start || 0
 	})
 
 	this.dirty = true;

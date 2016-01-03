@@ -5,6 +5,7 @@ var SystemRenderer = require('../SystemRenderer'),
     FilterManager = require('./managers/FilterManager'),
     BlendModeManager = require('./managers/BlendModeManager'),
     RenderTarget = require('./utils/RenderTarget'),
+    GLTexture = require('./utils/Texture'),
     ObjectRenderer = require('./utils/ObjectRenderer'),
     FXAAFilter = require('./filters/FXAAFilter'),
     utils = require('../../utils'),
@@ -387,18 +388,22 @@ WebGLRenderer.prototype.updateTexture = function (texture)
 
     if (!texture._glTextures[gl.id])
     {
-        texture._glTextures[gl.id] = gl.createTexture();
+        var glTexture = new GLTexture(gl);
+        texture._glTextures[gl.id] = glTexture//.texture//gl.createTexture()//new GLTexture(gl);
+
         texture.on('update', this.updateTexture, this);
         texture.on('dispose', this.destroyTexture, this);
+        
         this._managedTextures.push(texture);
     }
 
+    glTexture.upload(texture.source);
+    glTexture.enableWrapClamp();
+    glTexture.enableLinearScaling();
 
-    gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);
 
-    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultipliedAlpha);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.source);
-
+  
+/*
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, texture.scaleMode === CONST.SCALE_MODES.LINEAR ? gl.LINEAR : gl.NEAREST);
 
 
@@ -422,6 +427,7 @@ WebGLRenderer.prototype.updateTexture = function (texture)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
     }
+*/
 
     return  texture._glTextures[gl.id];
 };
@@ -442,7 +448,7 @@ WebGLRenderer.prototype.destroyTexture = function (texture, _skipRemove)
 
     if (texture._glTextures[this.gl.id])
     {
-        this.gl.deleteTexture(texture._glTextures[this.gl.id]);
+        texture._glTextures[this.gl.id].destroy();
         delete texture._glTextures[this.gl.id];
 
         if (!_skipRemove)

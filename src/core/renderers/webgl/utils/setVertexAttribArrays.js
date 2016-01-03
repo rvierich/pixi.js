@@ -8,8 +8,7 @@ var GL_MAP = {};
 
 
 var setVertexAttribArrays = function (gl, attribs)
-{
-	
+{	
 	var maxAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
 	
 	var data = GL_MAP[gl];
@@ -17,7 +16,7 @@ var setVertexAttribArrays = function (gl, attribs)
 	if(!data)
 	{
 		data = GL_MAP[gl] = {tempAttribState:new Array(maxAttribs)
-				 	 ,attribState:new Array(maxAttribs)};
+				 	 		,attribState:new Array(maxAttribs)};
 	}
 	
     var i,
