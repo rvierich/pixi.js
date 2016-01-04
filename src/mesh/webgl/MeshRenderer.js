@@ -27,26 +27,6 @@ function MeshRenderer(renderer)
 {
     core.ObjectRenderer.call(this, renderer);
 
-
-    /**
-     * Holds the indices
-     *
-     * @member {Uint16Array}
-     */
-    
-    this.indices = new Uint16Array(15000);
-
-    //TODO this could be a single buffer shared amongst all renderers as we reuse this set up in most renderers
-    for (var i=0, j=0; i < 15000; i += 6, j += 4)
-    {
-        this.indices[i + 0] = j + 0;
-        this.indices[i + 1] = j + 1;
-        this.indices[i + 2] = j + 2;
-        this.indices[i + 3] = j + 0;
-        this.indices[i + 4] = j + 2;
-        this.indices[i + 5] = j + 3;
-    }
-
     this.currentShader = null;
 
     this.firstRun = true;
@@ -59,17 +39,6 @@ module.exports = MeshRenderer;
 core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
 
 /**
- * Sets up the renderer context and necessary buffers.
- *
- * @private
- * @param gl {WebGLRenderingContext} the current WebGL drawing context
- */
-MeshRenderer.prototype.onContextChange = function ()
-{
-    
-};
-
-/**
  * Renders the sprite object.
  *
  * @param mesh {PIXI.mesh.Mesh} the mesh to render
@@ -78,8 +47,7 @@ MeshRenderer.prototype.render = function (mesh)
 {
 
     var renderer = this.renderer,
-        gl = renderer.gl,
-        texture = mesh._texture.baseTexture;
+        gl = renderer.gl
 
     if(this.firstRun)
     {
@@ -97,81 +65,37 @@ MeshRenderer.prototype.render = function (mesh)
 
         this.vao.addIndex(this.indexBuffer);   
 
-        this.vao.addAttribute(this.verticesBuffer, {
-           attrib:this.shader.attributes.aVertexPosition.location
-        });
+        this.vao.addAttribute(this.verticesBuffer, this.shader.attributes.aVertexPosition);
 
-        this.vao.addAttribute(this.uvsBuffer, {
-           attrib:this.shader.attributes.aTextureCoord.location
-        });
+        this.vao.addAttribute(this.uvsBuffer, this.shader.attributes.aTextureCoord);
 
         this.indexBuffer.upload(mesh.indices);
 
          
     }
 
-   // return;
-
     renderer.blendModeManager.setBlendMode(mesh.blendMode);
 
     var shader = this.shader;
 
-    shader.bind();
+    renderer.bindTexture(mesh._texture.baseTexture, gl.TEXTURE0);
+    renderer.bindShader(shader);
+    renderer.bindVertexArrayObject(this.vao);
 
+    // set some uniforms
     shader.uniforms.translationMatrix = mesh.worldTransform.toArray(true);
-    shader.uniforms.projectionMatrix = renderer.currentRenderTarget.projectionMatrix.toArray(true);
-    shader.uniforms.alpha = mesh.worldAlpha;
+    shader.uniforms.alpha = mesh.worldAlpha;    
 
-    gl.activeTexture(gl.TEXTURE0);
-
-    if (!texture._glTextures[gl.id])
-    {
-        this.renderer.updateTexture(texture);
-    }
-    else
-    {
-        // bind the current texture
-        texture._glTextures[gl.id].bind();
-    }
- 
+    this.verticesBuffer.upload(mesh.vertices);
+    
     if (mesh.dirty)
     {
         mesh.dirty = false;
         this.uvsBuffer.upload(mesh.uvs);    
     }
     
-
-    // bind the vao and render the mesh!
-    this.vao.bind();
-
-    this.verticesBuffer.upload(mesh.vertices);
-    
     var drawMode = mesh.drawMode === Mesh.DRAW_MODES.TRIANGLE_MESH ? gl.TRIANGLE_STRIP : gl.TRIANGLES;
     gl.drawElements(drawMode, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
-
-
-  
-    //TODO cache custom state..
-};
-
-/**
- * Empties the current batch.
- *
- */
-MeshRenderer.prototype.flush = function ()
-{
-
-};
-
-/**
- * Starts a new mesh renderer.
- *
- */
-MeshRenderer.prototype.start = function ()
-{
-    
-
-    this.currentShader = null;
 };
 
 /**

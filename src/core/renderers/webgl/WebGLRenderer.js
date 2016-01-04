@@ -208,6 +208,7 @@ WebGLRenderer.prototype.render = function (object)
     this.emit('postrender');
 };
 
+
 /**
  * Renders a Display Object.
  *
@@ -219,12 +220,9 @@ WebGLRenderer.prototype.renderDisplayObject = function (displayObject, renderTar
 {
     // TODO is this needed...
     //this.blendModeManager.setBlendMode(CONST.BLEND_MODES.NORMAL);
-    this.setRenderTarget(renderTarget);
+    this.bindRenderTarget(renderTarget);
 
-    if(clear)
-    {
-        renderTarget.clear(0,0,0,0);;
-    }
+    renderTarget.clear();
 
     // start the filter manager
     this.filterManager.setFilterStack( renderTarget.filterStack );
@@ -254,24 +252,6 @@ WebGLRenderer.prototype.setObjectRenderer = function (objectRenderer)
 };
 
 /**
- * Changes the current render target to the one given in parameter
- *
- * @param renderTarget {PIXI.RenderTarget} the new render target
- */
-WebGLRenderer.prototype.setRenderTarget = function (renderTarget)
-{
-    if( this.currentRenderTarget === renderTarget)
-    {
-        return;
-    }
-    // TODO - maybe down the line this should be a push pos thing? Leaving for now though.
-    this.currentRenderTarget = renderTarget;
-    this.currentRenderTarget.activate();
-    this.stencilManager.setMaskStack( renderTarget.stencilMaskStack );
-};
-
-
-/**
  * Resizes the webGL view to the specified width and height.
  *
  * @param width {number} the new width of the webGL view
@@ -296,10 +276,79 @@ WebGLRenderer.prototype.resize = function (width, height)
  *
  * @param texture {PIXI.BaseTexture|PIXI.Texture} the texture to update
  */
-WebGLRenderer.prototype.updateTexture = function (texture)
+/*
+WebGLRenderer.prototype._updateTexture = function (texture)
 {
-    this.textureManager.updateTexture(texture);
-};
+    console.log('no need')
+};*/
+
+WebGLRenderer.prototype.bindTexture = function (texture, location)
+{
+    //TODO test perf of cache?
+    location = location || gl.TEXTURE0;
+
+    if(this._activeTextureLocation)//
+    {
+        this._activeTextureLocation = location
+        gl.activeTexture(location || gl.TEXTURE0);
+    }
+
+    //TODO - can we cache this texture too?
+    if (!texture._glTextures[gl.id])
+    {
+        this.textureManager.updateTexture(texture);
+    }
+    else
+    {
+        // bind the current texture
+        texture._glTextures[gl.id].bind();
+    }
+}
+
+
+/**
+ * Changes the current render target to the one given in parameter
+ *
+ * @param renderTarget {PIXI.RenderTarget} the new render target
+ */
+WebGLRenderer.prototype.bindRenderTarget = function (renderTarget)//projection, buffer)
+{
+    if( this._activeRenderTarget === renderTarget)
+    {
+        return;
+    }
+    // TODO - maybe down the line this should be a push pos thing? Leaving for now though.
+    this._activeRenderTarget = renderTarget;
+    
+    renderTarget.activate();
+    
+    this.stencilManager.setMaskStack( renderTarget.stencilMaskStack );
+
+    if(this._activShader)
+    {
+        this._activShader.uniforms.projectionMatrix = renderTarget.projectionMatrix.toArray(true);
+    }
+    
+}
+
+WebGLRenderer.prototype.bindShader = function (shader)//projection, buffer)
+{
+    //TODO cache
+    if(this._activShader !== shader)
+    {
+        this._activShader = shader;
+
+        shader.bind();
+        // automatically set the projection matrix
+        shader.uniforms.projectionMatrix = this._activeRenderTarget.projectionMatrix.toArray(true);
+    }
+}
+
+WebGLRenderer.prototype.bindVertexArrayObject = function (vbo)//projection, buffer)
+{
+    //TODO cache ?
+    vbo.bind();
+}
 
 /**
  * Deletes the texture from WebGL
@@ -349,15 +398,6 @@ WebGLRenderer.prototype.destroy = function (removeView)
     this.view.removeEventListener('webglcontextrestored', this.handleContextRestored);
 
     this.textureManager.destroyAll();
-
-    // destroy managed textures
-    for (var i = 0; i < this._managedTextures.length; ++i)
-    {
-        var texture = this._managedTextures[i];
-        this.destroyTexture(texture, true);
-        texture.off('update', this.updateTexture, this);
-        texture.off('dispose', this.destroyTexture, this);
-    }
 
     // call base destroy
     SystemRenderer.prototype.destroy.call(this, removeView);

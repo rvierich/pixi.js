@@ -7,7 +7,7 @@
 var GL_MAP = {};
 
 
-var setVertexAttribArrays = function (gl, attribs)
+var setVertexAttribArrays = function (gl, attribs, state)
 {	
 	var maxAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
 	

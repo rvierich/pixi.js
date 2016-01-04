@@ -6,6 +6,10 @@ var setVertexAttribArrays = require('./setVertexAttribArrays');
  * @class
  * @memberof PIXI
  */
+
+// state object//
+
+
 function VertexArrayObject(gl)
 {
 	
@@ -14,6 +18,7 @@ function VertexArrayObject(gl)
       gl.getExtension('MOZ_OES_vertex_array_object') ||
       gl.getExtension('WEBKIT_OES_vertex_array_object')
     );
+
 
 	if(this.nativeVaoExtension)
 	{
@@ -53,10 +58,7 @@ VertexArrayObject.prototype.bind = function()
 			this.update();
 		}
 
-		if(this.nativeVao)
-		{
-			this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);  
-		}
+		this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);  
 	}
 	else
 	{

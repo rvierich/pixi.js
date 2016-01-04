@@ -15,6 +15,19 @@ var TextureManager = function(gl)
 
 	// track textures in the renderer so we can no longer listen to them on destruction.
 	this._managedTextures = [];
+    this.glTextures = {};
+
+}
+
+TextureManager.prototype.bindTexture = function(texture)
+{
+
+}
+
+
+TextureManager.prototype.getTexture = function(texture)
+{
+
 }
 
 /**
@@ -33,13 +46,15 @@ TextureManager.prototype.updateTexture = function(texture)
 
     
     var gl = this.gl;
-    var glTexture = texture._glTextures[gl.id];
+    var glTexture = this.glTextures[texture.uid]//texture._glTextures[gl.id];
 
     if (!glTexture)
     {
         glTexture = new GLTexture(gl);
         
         texture._glTextures[gl.id] = glTexture;
+
+       // this.glTextures[texture.uid] = glTexture;
 
         texture.on('update', this.updateTexture, this);
         texture.on('dispose', this.destroyTexture, this);

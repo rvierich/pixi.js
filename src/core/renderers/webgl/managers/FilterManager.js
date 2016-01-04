@@ -128,7 +128,7 @@ FilterManager.prototype.pushFilter = function (target, filters)
 
         var texture = this.getRenderTarget();
 
-        this.renderer.setRenderTarget(texture);
+        this.renderer.bindRenderTarget(texture);
 
         // clear the texture..
         texture.clear();
@@ -281,7 +281,7 @@ FilterManager.prototype.applyFilter = function (shader, inputTarget, outputTarge
 {
     var gl = this.renderer.gl;
 
-    this.renderer.setRenderTarget(outputTarget);
+    this.renderer.bindRenderTarget(outputTarget);
 
     if (clear)
     {

@@ -68,6 +68,8 @@ function SpriteRenderer(renderer)
      *
      * @member {Float32Array}
      */
+    
+    //TODO test performace
     this.positions = new Float32Array(this.vertices);
 
     /**
@@ -366,8 +368,6 @@ SpriteRenderer.prototype.flush = function ()
             {
                 currentShader = nextShader;
 
-
-
                 shader = currentShader.shaders ? currentShader.shaders[gl.id] : currentShader;
 
                 if (!shader)
@@ -380,13 +380,13 @@ SpriteRenderer.prototype.flush = function ()
               //  this.renderer.shaderManager.setShader(shader);
 
                 //TODO - i KNOW this can be optimised! Once v3 is stable il look at this next...
-                this._shader.uniforms.projectionMatrix = this.renderer.currentRenderTarget.projectionMatrix.toArray(true);
+                //this._shader.uniforms.projectionMatrix = this.renderer.currentRenderTarget.projectionMatrix.toArray(true);
                 //Make this a little more dynamic / intelligent!
 //                shader.syncUniforms();
 
                 //TODO investigate some kind of texture state managment??
                 // need to make sure this texture is the active one for all the batch swaps..
-                gl.activeTexture(gl.TEXTURE0);
+               // gl.activeTexture(gl.TEXTURE0);
 
                 // both thease only need to be set if they are changing..
                 // set the projection
@@ -422,16 +422,7 @@ SpriteRenderer.prototype.renderBatch = function (texture, size, startIndex)
 
     var gl = this.renderer.gl;
 
-    if (!texture._glTextures[gl.id])
-    {
-        this.renderer.updateTexture(texture);
-    }
-    else
-    {
-        // bind the current texture
-        // gl.bindTexture(gl.TEXTURE_2D, texture._glTextures[gl.id]);  
-        texture._glTextures[gl.id].bind();
-    }
+    this.renderer.bindTexture(texture, gl.TEXTURE0);
 
     // now draw those suckas!
     gl.drawElements(gl.TRIANGLES, size * 6, gl.UNSIGNED_SHORT, startIndex * 6 * 2);
@@ -448,8 +439,8 @@ SpriteRenderer.prototype.start = function ()
 {
     var gl = this.renderer.gl;
     
-    this.vao.bind();
-    this._shader.bind();
+    his.renderer.bindVertexArrayObject(this.vao);
+    this.renderer.bindShader(this._shader);
 };
 
 /**

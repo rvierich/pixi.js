@@ -58,6 +58,11 @@ Buffer.createIndexBuffer = function(gl)
 	return new Buffer(gl, gl.ELEMENT_ARRAY_BUFFER);
 }
 
+Buffer.create = function(gl, type, drawType)
+{
+	return new Buffer(gl, type, drawType);
+}
+
 //TODO Destroy..
 
 module.exports = Buffer;

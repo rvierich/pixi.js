@@ -148,7 +148,7 @@ DisplayObject.prototype._initCachedDisplayObject = function (renderer)
     renderTexture.render(this, m, true, true);
 
     // now restore the state be setting the new properties
-    renderer.setRenderTarget(cachedRenderTarget);
+    renderer.bindRenderTarget(cachedRenderTarget);
     renderer.filterManager.filterStack = stack;
 
     this.renderWebGL     = this._renderCachedWebGL;
