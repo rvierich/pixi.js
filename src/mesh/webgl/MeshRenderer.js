@@ -1,8 +1,8 @@
 var core = require('../../core'),
     Mesh = require('../Mesh'),
-    VertexArrayObject = require('../../core/renderers/webgl/utils/VertexArrayObject'),
-    Buffer = require('../../core/renderers/webgl/utils/Buffer'),
-    Shader = require('../../core/renderers/webgl/utils/Shader'),
+    VertexArrayObject = require('../../core/renderers/webgl/core/VertexArrayObject'),
+    Buffer = require('../../core/renderers/webgl/core/GLBuffer'),
+    Shader = require('../../core/renderers/webgl/core/GLShader'),
     MeshShader = require('./MeshShader')
 /**
  * @author Mat Groves

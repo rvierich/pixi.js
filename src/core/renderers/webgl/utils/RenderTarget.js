@@ -2,8 +2,8 @@ var math = require('../../../math'),
     utils = require('../../../utils'),
     CONST = require('../../../const'),
     
-    Framebuffer = require('./Framebuffer'),
-    Texture = require('./Texture'),
+    Framebuffer = require('../core/GLFramebuffer'),
+    Texture = require('../core/GLTexture'),
     
     StencilMaskStack = require('./StencilMaskStack');
 
@@ -165,9 +165,9 @@ module.exports = RenderTarget;
  *
  * @param [bind=false] {boolean} Should we bind our framebuffer before clearing?
  */
-RenderTarget.prototype.clear = function(bind)
+RenderTarget.prototype.clear = function(r,g,b,a)
 {
-    this.frameBuffer.clear();
+    this.frameBuffer.clear(r,g,b,a);
 };
 
 /**

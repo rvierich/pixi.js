@@ -5,9 +5,9 @@ var SystemRenderer = require('../SystemRenderer'),
     FilterManager = require('./managers/FilterManager'),
     BlendModeManager = require('./managers/BlendModeManager'),
     RenderTarget = require('./utils/RenderTarget'),
-    GLTexture = require('./utils/Texture'),
     ObjectRenderer = require('./utils/ObjectRenderer'),
-    FXAAFilter = require('./filters/FXAAFilter'),
+    createContext = require('./core/createContext'),
+    TextureManager = require('./TextureManager'),
     utils = require('../../utils'),
     CONST = require('../../const');
 
@@ -55,36 +55,8 @@ function WebGLRenderer(width, height, options)
     this.view.addEventListener('webglcontextlost', this.handleContextLost, false);
     this.view.addEventListener('webglcontextrestored', this.handleContextRestored, false);
 
-    //TODO possibility to force FXAA as it may offer better performance?
-    /**
-     * Does it use FXAA ?
-     *
-     * @member {boolean}
-     * @private
-     */
-    this._useFXAA = !!options.forceFXAA && options.antialias;
-
-    /**
-     * The fxaa filter
-     *
-     * @member {PIXI.FXAAFilter}
-     * @private
-     */
-    this._FXAAFilter = null;
-
-    /**
-     * The options passed in to create a new webgl context.
-     *
-     * @member {object}
-     * @private
-     */
-    this._contextOptions = {
-        alpha: this.transparent,
-        antialias: options.antialias,
-        premultipliedAlpha: this.transparent && this.transparent !== 'notMultiplied',
-        stencil: true,
-        preserveDrawingBuffer: options.preserveDrawingBuffer
-    };
+    
+    
 
     /**
      * Counter for the number of draws made each frame
@@ -145,15 +117,22 @@ function WebGLRenderer(width, height, options)
 
     this.initPlugins();
 
+    
     // initialize the context so it is ready for the managers.
-    this._createContext();
-    this._initContext();
+    var options = {
+        alpha: this.transparent,
+        antialias: options.antialias,
+        premultipliedAlpha: this.transparent && this.transparent !== 'notMultiplied',
+        stencil: true,
+        preserveDrawingBuffer: options.preserveDrawingBuffer
+    };
+
+    this.gl = createContext(this.view, options);
+
+    this.prepareContext();
 
     // map some webGL blend modes..
     this._mapGlModes();
-
-    // track textures in the renderer so we can no longer listen to them on destruction.
-    this._managedTextures = [];
 
     /**
      * An array of render targets
@@ -161,6 +140,8 @@ function WebGLRenderer(width, height, options)
      * @private
      */
     this._renderTargetStack = [];
+
+    this.textureManager = new TextureManager(this.gl);
 }
 
 // constructor
@@ -169,34 +150,13 @@ WebGLRenderer.prototype.constructor = WebGLRenderer;
 module.exports = WebGLRenderer;
 utils.pluginTarget.mixin(WebGLRenderer);
 
-WebGLRenderer.glContextId = 0;
-
-/**
- * Creates the gl context.
- *
- * @private
- */
-WebGLRenderer.prototype._createContext = function () {
-    var gl = this.view.getContext('webgl', this._contextOptions) || this.view.getContext('experimental-webgl', this._contextOptions);
-    this.gl = gl;
-
-    if (!gl)
-    {
-        // fail, not able to get a context
-        throw new Error('This browser does not support webGL. Try using the canvas renderer');
-    }
-
-    this.glContextId = WebGLRenderer.glContextId++;
-    gl.id = this.glContextId;
-    gl.renderer = this;
-};
 
 /**
  * Creates the WebGL context
  *
  * @private
  */
-WebGLRenderer.prototype._initContext = function ()
+WebGLRenderer.prototype.prepareContext = function ()
 {
     var gl = this.gl;
 
@@ -207,24 +167,10 @@ WebGLRenderer.prototype._initContext = function ()
 
     this.renderTarget = new RenderTarget(gl, this.width, this.height, null, this.resolution, true);
 
-    this.setRenderTarget(this.renderTarget);
-
     this.emit('context', gl);
 
     // setup the width/height properties and gl viewport
     this.resize(this.width, this.height);
-
-    if(!this._useFXAA)
-    {
-        this._useFXAA = (this._contextOptions.antialias && ! gl.getContextAttributes().antialias);
-    }
-
-
-    if(this._useFXAA)
-    {
-        window.console.warn('FXAA antialiasing being used instead of native antialiasing');
-        this._FXAAFilter = [new FXAAFilter()];
-    }
 };
 
 /**
@@ -247,42 +193,17 @@ WebGLRenderer.prototype.render = function (object)
 
     this._lastObjectRendered = object;
 
-    if(this._useFXAA)
-    {
-        this._FXAAFilter[0].uniforms.resolution.value.x = this.width;
-        this._FXAAFilter[0].uniforms.resolution.value.y = this.height;
-        object.filterArea = this.renderTarget.size;
-        object.filters = this._FXAAFilter;
-    }
-
+    // update the transformation of the objcts...
     var cacheParent = object.parent;
     object.parent = this._tempDisplayObjectParent;
 
     // update the scene graph
     object.updateTransform();
 
+    // 
     object.parent = cacheParent;
 
-    var gl = this.gl;
-
-    // make sure we are bound to the main frame buffer
-    this.setRenderTarget(this.renderTarget);
-
-    if (this.clearBeforeRender)
-    {
-        if (this.transparent)
-        {
-            gl.clearColor(0, 0, 0, 0);
-        }
-        else
-        {
-            gl.clearColor(this._backgroundColorRgb[0], this._backgroundColorRgb[1], this._backgroundColorRgb[2], 1);
-        }
-
-        gl.clear(gl.COLOR_BUFFER_BIT);
-    }
-
-    this.renderDisplayObject(object, this.renderTarget);//this.projection);
+    this.renderDisplayObject(object, this.renderTarget, this.clearBeforeRender);//this.projection);
 
     this.emit('postrender');
 };
@@ -302,7 +223,7 @@ WebGLRenderer.prototype.renderDisplayObject = function (displayObject, renderTar
 
     if(clear)
     {
-        renderTarget.clear();
+        renderTarget.clear(0,0,0,0);;
     }
 
     // start the filter manager
@@ -377,59 +298,7 @@ WebGLRenderer.prototype.resize = function (width, height)
  */
 WebGLRenderer.prototype.updateTexture = function (texture)
 {
-    texture = texture.baseTexture || texture;
-
-    if (!texture.hasLoaded)
-    {
-        return;
-    }
-
-    var gl = this.gl;
-
-    if (!texture._glTextures[gl.id])
-    {
-        var glTexture = new GLTexture(gl);
-        texture._glTextures[gl.id] = glTexture//.texture//gl.createTexture()//new GLTexture(gl);
-
-        texture.on('update', this.updateTexture, this);
-        texture.on('dispose', this.destroyTexture, this);
-        
-        this._managedTextures.push(texture);
-    }
-
-    glTexture.upload(texture.source);
-    glTexture.enableWrapClamp();
-    glTexture.enableLinearScaling();
-
-
-  
-/*
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, texture.scaleMode === CONST.SCALE_MODES.LINEAR ? gl.LINEAR : gl.NEAREST);
-
-
-    if (texture.mipmap && texture.isPowerOfTwo)
-    {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, texture.scaleMode === CONST.SCALE_MODES.LINEAR ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST);
-        gl.generateMipmap(gl.TEXTURE_2D);
-    }
-    else
-    {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, texture.scaleMode === CONST.SCALE_MODES.LINEAR ? gl.LINEAR : gl.NEAREST);
-    }
-
-    if (!texture.isPowerOfTwo)
-    {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    }
-    else
-    {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-    }
-*/
-
-    return  texture._glTextures[gl.id];
+    this.textureManager.updateTexture(texture);
 };
 
 /**
@@ -439,26 +308,7 @@ WebGLRenderer.prototype.updateTexture = function (texture)
  */
 WebGLRenderer.prototype.destroyTexture = function (texture, _skipRemove)
 {
-    texture = texture.baseTexture || texture;
-
-    if (!texture.hasLoaded)
-    {
-        return;
-    }
-
-    if (texture._glTextures[this.gl.id])
-    {
-        texture._glTextures[this.gl.id].destroy();
-        delete texture._glTextures[this.gl.id];
-
-        if (!_skipRemove)
-        {
-            var i = this._managedTextures.indexOf(texture);
-            if (i !== -1) {
-                utils.removeItems(this._managedTextures, i, 1);
-            }
-        }
-    }
+    this.textureManager.destroyTexture(texture, _skipRemove);
 };
 
 /**
@@ -481,14 +331,8 @@ WebGLRenderer.prototype.handleContextRestored = function ()
     this._initContext();
 
     // empty all the old gl textures as they are useless now
-    for (var i = 0; i < this._managedTextures.length; ++i)
-    {
-        var texture = this._managedTextures[i];
-        if (texture._glTextures[this.gl.id])
-        {
-            delete texture._glTextures[this.gl.id];
-        }
-    }
+    this.textureManager.destroyAll();
+    
 };
 
 /**
@@ -503,6 +347,8 @@ WebGLRenderer.prototype.destroy = function (removeView)
     // remove listeners
     this.view.removeEventListener('webglcontextlost', this.handleContextLost);
     this.view.removeEventListener('webglcontextrestored', this.handleContextRestored);
+
+    this.textureManager.destroyAll();
 
     // destroy managed textures
     for (var i = 0; i < this._managedTextures.length; ++i)
@@ -535,8 +381,6 @@ WebGLRenderer.prototype.destroy = function (removeView)
     this.handleContextRestored = null;
 
     this._contextOptions = null;
-
-    this._managedTextures = null;
 
     this.drawCount = 0;
 

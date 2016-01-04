@@ -1,5 +1,5 @@
 
-var Texture = require('./Texture');
+var Texture = require('./GLTexture');
 
 /**
  * Helper class to create a webGL Framebuffer
@@ -52,13 +52,13 @@ Framebuffer.prototype.enableStencil = function()
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL,  this.width  , this.height );
 }
 
-Framebuffer.prototype.clear = function()
+Framebuffer.prototype.clear = function( r, g, b, a )
 {
 	this.bind();
 
 	var gl = this.gl;
     
-    gl.clearColor(0,0,0,0);
+    gl.clearColor(r, g, b, a);
     gl.clear(gl.COLOR_BUFFER_BIT);
 }
 

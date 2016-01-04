@@ -1,10 +1,10 @@
 var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
     CONST = require('../../const'),
-    VertexArrayObject = require('../../renderers/webgl/utils/VertexArrayObject'),
+    VertexArrayObject = require('../../renderers/webgl/core/VertexArrayObject'),
     TextureShader = require('../../renderers/webgl/shaders/_TextureShader'),
     createIndicesForQuads = require('../../renderers/webgl/utils/createIndicesForQuads'),
-    GLBuffer = require('../../renderers/webgl/utils/Buffer');
+    GLBuffer = require('../../renderers/webgl/core/GLBuffer');
 
 /**
  * @author Mat Groves
@@ -55,9 +55,7 @@ function SpriteRenderer(renderer)
     // the total number of bytes in our batch
     var numVerts = (this.size * 4) * this.vertByteSize;
 
-    // the total number of indices in our batch, there are 6 points per quad.
-    var numIndices = this.size * 6;
-
+    
     /**
      * Holds the vertex data that will be sent to the vertex shader.
      *

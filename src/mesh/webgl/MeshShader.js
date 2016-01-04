@@ -1,5 +1,5 @@
 var core = require('../../core'),
-    Shader = require('../../core/renderers/webgl/utils/Shader');
+    Shader = require('../../core/renderers/webgl/core/GLShader');
 
 /**
  * @class
