@@ -6,7 +6,7 @@ var SystemRenderer = require('../SystemRenderer'),
     BlendModeManager = require('./managers/BlendModeManager'),
     RenderTarget = require('./utils/RenderTarget'),
     ObjectRenderer = require('./utils/ObjectRenderer'),
-    createContext = require('./core/createContext'),
+    createContext = require('pixi-gl-core').createContext;
     TextureManager = require('./TextureManager'),
     utils = require('../../utils'),
     CONST = require('../../const');
@@ -55,7 +55,16 @@ function WebGLRenderer(width, height, options)
     this.view.addEventListener('webglcontextlost', this.handleContextLost, false);
     this.view.addEventListener('webglcontextrestored', this.handleContextRestored, false);
 
-    
+     // initialize the context so it is ready for the managers.
+    var options = {
+        alpha: this.transparent,
+        antialias: options.antialias,
+        premultipliedAlpha: this.transparent && this.transparent !== 'notMultiplied',
+        stencil: true,
+        preserveDrawingBuffer: options.preserveDrawingBuffer
+    };
+
+    this.gl = createContext(this.view, options);
     
 
     /**
@@ -114,20 +123,8 @@ function WebGLRenderer(width, height, options)
      * @member {PIXI.ObjectRenderer}
      */
     this.currentRenderer = new ObjectRenderer(this);
-
-    this.initPlugins();
-
     
-    // initialize the context so it is ready for the managers.
-    var options = {
-        alpha: this.transparent,
-        antialias: options.antialias,
-        premultipliedAlpha: this.transparent && this.transparent !== 'notMultiplied',
-        stencil: true,
-        preserveDrawingBuffer: options.preserveDrawingBuffer
-    };
-
-    this.gl = createContext(this.view, options);
+   
 
     this.prepareContext();
 
@@ -142,6 +139,8 @@ function WebGLRenderer(width, height, options)
     this._renderTargetStack = [];
 
     this.textureManager = new TextureManager(this.gl);
+
+    this.initPlugins();
 }
 
 // constructor
@@ -222,7 +221,7 @@ WebGLRenderer.prototype.renderDisplayObject = function (displayObject, renderTar
     //this.blendModeManager.setBlendMode(CONST.BLEND_MODES.NORMAL);
     this.bindRenderTarget(renderTarget);
 
-    renderTarget.clear();
+    if(clear)renderTarget.clear();
 
     // start the filter manager
     this.filterManager.setFilterStack( renderTarget.filterStack );
@@ -346,8 +345,11 @@ WebGLRenderer.prototype.bindShader = function (shader)//projection, buffer)
 
 WebGLRenderer.prototype.bindVertexArrayObject = function (vbo)//projection, buffer)
 {
-    //TODO cache ?
-    vbo.bind();
+    if(this._activeVertexArrayObject !== vbo)
+    {   
+        this._activeVertexArrayObject = vbo;
+        vbo.bind();
+    }
 }
 
 /**

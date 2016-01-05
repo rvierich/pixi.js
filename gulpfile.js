@@ -20,7 +20,7 @@ var gulp        = require('gulp'),
 global.paths = {
     src: './src',
     out: './bin',
-
+    glCore: "hello",
     get scripts() { return this.src + '/**/*.js'; },
     get jsEntry() { return this.src + '/index'; }
 };

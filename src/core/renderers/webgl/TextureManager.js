@@ -1,4 +1,4 @@
-var GLTexture = require('./core/GLTexture'),
+var GLTexture = require('pixi-gl-core').GLTexture,
 	utils = require('../../utils');
 
 /**

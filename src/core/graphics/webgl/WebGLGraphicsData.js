@@ -1,3 +1,5 @@
+var GLBuffer = require('pixi-gl-core').GLBuffer;
+
 /**
  * An object containing WebGL specific properties to be used by the WebGL renderer
  *
@@ -37,13 +39,13 @@ function WebGLGraphicsData(gl) {
      * The main buffer
      * @member {WebGLBuffer}
      */
-    this.buffer = gl.createBuffer();
+    this.buffer = GLBuffer.createVertexBuffer(gl);
 
     /**
      * The index buffer
      * @member {WebGLBuffer}
      */
-    this.indexBuffer = gl.createBuffer();
+    this.indexBuffer = GLBuffer.createIndexBuffer(gl);
 
     /**
      * todo @alvin
@@ -84,16 +86,12 @@ WebGLGraphicsData.prototype.reset = function () {
 WebGLGraphicsData.prototype.upload = function () {
     var gl = this.gl;
 
-//    this.lastIndex = graphics.graphicsData.length;
     this.glPoints = new Float32Array(this.points);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, this.glPoints, gl.STATIC_DRAW);
 
     this.glIndices = new Uint16Array(this.indices);
 
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.glIndices, gl.STATIC_DRAW);
+    this.buffer.upload(this.glPoints);
+    this.indexBuffer.upload(this.glIndices);
 
     this.dirty = false;
 };

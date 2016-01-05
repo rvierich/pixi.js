@@ -1,9 +1,9 @@
 var math = require('../../../math'),
     utils = require('../../../utils'),
     CONST = require('../../../const'),
-    
-    Framebuffer = require('../core/GLFramebuffer'),
-    Texture = require('../core/GLTexture'),
+        
+    GLTexture = require('pixi-gl-core').GLTexture,
+    GLFramebuffer = require('pixi-gl-core').GLFramebuffer,
     
     StencilMaskStack = require('./StencilMaskStack');
 
@@ -127,7 +127,7 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
      */
     this.root = root;
 
-    this.frameBuffer = new Framebuffer(gl);
+    this.frameBuffer = new GLFramebuffer(gl);
 
     if (!this.root)
     {
@@ -137,7 +137,7 @@ var RenderTarget = function(gl, width, height, scaleMode, resolution, root)
          */
         
         // create a texture to bind attach to the frameBuffer..
-        var texture = new Texture(gl);
+        var texture = new GLTexture(gl);
 
         texture.enableLinearScaling()
         texture.enableWrapClamp()

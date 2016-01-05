@@ -3,7 +3,12 @@ var utils = require('../../utils'),
     CONST = require('../../const'),
     ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
+    ComplexPrimitiveShader = require('../../renderers/webgl/shaders/_ComplexPrimitiveShader'),
+    PrimitiveShader = require('../../renderers/webgl/shaders/_PrimitiveShader'),
     WebGLGraphicsData = require('./WebGLGraphicsData'),
+    
+    glCore = require('pixi-gl-core'),
+
     earcut = require('earcut');
 
 /**
@@ -21,8 +26,10 @@ function GraphicsRenderer(renderer)
 
     this.graphicsDataPool = [];
 
-    this.primitiveShader = null;
-    this.complexPrimitiveShader = null;
+    var gl = renderer.gl;
+
+    this.primitiveShader = new PrimitiveShader(gl);
+    this.complexPrimitiveShader = new ComplexPrimitiveShader(gl);
 
     /**
      * This is the maximum number of points a poly can contain before it is rendered as a complex polygon (using the stencil buffer)
@@ -36,17 +43,6 @@ GraphicsRenderer.prototype.constructor = GraphicsRenderer;
 module.exports = GraphicsRenderer;
 
 WebGLRenderer.registerPlugin('graphics', GraphicsRenderer);
-
-/**
- * Called when there is a WebGL context change
- *
- * @private
- *
- */
-GraphicsRenderer.prototype.onContextChange = function()
-{
-
-};
 
 /**
  * Destroys this renderer.
@@ -69,6 +65,7 @@ GraphicsRenderer.prototype.destroy = function () {
  */
 GraphicsRenderer.prototype.render = function(graphics)
 {
+
     var renderer = this.renderer;
     var gl = renderer.gl;
 
@@ -99,7 +96,10 @@ GraphicsRenderer.prototype.render = function(graphics)
 
             renderer.stencilManager.pushStencil(graphics, webGLData);
 
-            gl.uniform1f(renderer.shaderManager.complexPrimitiveShader.uniforms.alpha._location, graphics.worldAlpha * webGLData.alpha);
+            this.complexPrimitiveShader.uniforms.alpha = graphics.worldAlpha * webGLData.alpha;
+            
+
+            //gl.uniform1f(renderer.shaderManager.complexPrimitiveShader.uniforms.alpha._location, graphics.worldAlpha * webGLData.alpha);
 
             // render quad..
             gl.drawElements(gl.TRIANGLE_FAN, 4, gl.UNSIGNED_SHORT, ( webGLData.indices.length - 4 ) * 2 );
@@ -108,27 +108,25 @@ GraphicsRenderer.prototype.render = function(graphics)
         }
         else
         {
+            shader = this.primitiveShader;//renderer.shaderManager.primitiveShader;
+            
+            renderer.bindShader(shader);
 
-            shader = renderer.shaderManager.primitiveShader;
+            shader.uniforms.translationMatrix = graphics.worldTransform.toArray(true);
+            shader.uniforms.tint = utils.hex2rgb(graphics.tint);
+            shader.uniforms.alpha = graphics.worldAlpha;
 
-            renderer.shaderManager.setShader( shader );//activatePrimitiveShader();
+            webGLData.buffer.bind();
 
-            gl.uniformMatrix3fv(shader.uniforms.translationMatrix._location, false, graphics.worldTransform.toArray(true));
+            glCore.setVertexAttribArrays( gl, shader.attributes );
 
-            gl.uniformMatrix3fv(shader.uniforms.projectionMatrix._location, false, renderer.currentRenderTarget.projectionMatrix.toArray(true));
-
-            gl.uniform3fv(shader.uniforms.tint._location, utils.hex2rgb(graphics.tint));
-
-            gl.uniform1f(shader.uniforms.alpha._location, graphics.worldAlpha);
-
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, webGLData.buffer);
-
-            gl.vertexAttribPointer(shader.attributes.aVertexPosition, 2, gl.FLOAT, false, 4 * 6, 0);
-            gl.vertexAttribPointer(shader.attributes.aColor, 4, gl.FLOAT, false,4 * 6, 2 * 4);
+            shader.attributes.aVertexPosition.pointer(gl.FLOAT, false, 4 * 6, 0);
+            shader.attributes.aColor.pointer(gl.FLOAT, false,4 * 6, 2 * 4);
 
             // set the index buffer!
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webGLData.indexBuffer);
+            webGLData.indexBuffer.bind();
+            
+            //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webGLData.indexBuffer);
             gl.drawElements(gl.TRIANGLE_STRIP,  webGLData.indices.length, gl.UNSIGNED_SHORT, 0 );
         }
 

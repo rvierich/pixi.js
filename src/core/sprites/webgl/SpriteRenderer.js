@@ -1,10 +1,12 @@
 var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
     CONST = require('../../const'),
-    VertexArrayObject = require('../../renderers/webgl/core/VertexArrayObject'),
     TextureShader = require('../../renderers/webgl/shaders/_TextureShader'),
-    createIndicesForQuads = require('../../renderers/webgl/utils/createIndicesForQuads'),
-    GLBuffer = require('../../renderers/webgl/core/GLBuffer');
+    
+    VertexArrayObject = require('pixi-gl-core').VertexArrayObject,
+    GLBuffer = require('pixi-gl-core').GLBuffer,
+    
+    createIndicesForQuads = require('../../renderers/webgl/utils/createIndicesForQuads')
 
 /**
  * @author Mat Groves
@@ -80,13 +82,6 @@ function SpriteRenderer(renderer)
     this.colors = new Uint32Array(this.vertices);
 
     /**
-     * Holds the indices of the geometry (quads) to draw
-     *
-     * @member {Uint16Array}
-     */
-    this.indices = createIndicesForQuads(this.size);
-
-    /**
      * The current size of the batch, each render() call adds to this number.
      *
      * @member {number}
@@ -107,35 +102,15 @@ function SpriteRenderer(renderer)
      */
     this.shader = null;
 
-   
-}
 
-SpriteRenderer.prototype = Object.create(ObjectRenderer.prototype);
-SpriteRenderer.prototype.constructor = SpriteRenderer;
-module.exports = SpriteRenderer;
-
-WebGLRenderer.registerPlugin('sprite', SpriteRenderer);
-
-/**
- * Sets up the renderer context and necessary buffers.
- *
- * @private
- * @param gl {WebGLRenderingContext} the current WebGL drawing context
- */
-SpriteRenderer.prototype.onContextChange = function ()
-{
-    var gl = this.renderer.gl;
-
-    // setup default shader
-    this.shader = this.renderer.shaderManager.defaultShader;
+     var gl = this.renderer.gl;
 
     // create a couple of buffers
     this.currentBlendMode = 99999;
 
 
-    /// new 
-    var indexBuffer = new GLBuffer.createIndexBuffer(gl, null, gl.STATIC_DRAW);
-    indexBuffer.upload(this.indices);
+    var indexBuffer = new GLBuffer.createIndexBuffer(gl);
+    indexBuffer.upload( createIndicesForQuads(this.size) );
     
     this.verticesBuffer = new GLBuffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
     
@@ -146,7 +121,7 @@ SpriteRenderer.prototype.onContextChange = function ()
     this.vao = new VertexArrayObject(gl);
 
     this.vao.addIndex(indexBuffer);   
-        
+          
     this.vao.addAttribute(this.verticesBuffer
                          ,this._shader.attributes.aVertexPosition
                          ,gl.FLOAT
@@ -167,7 +142,13 @@ SpriteRenderer.prototype.onContextChange = function ()
                          ,this.vertByteSize
                          ,true
                          ,4 * 4);
-};
+}
+
+SpriteRenderer.prototype = Object.create(ObjectRenderer.prototype);
+SpriteRenderer.prototype.constructor = SpriteRenderer;
+module.exports = SpriteRenderer;
+
+WebGLRenderer.registerPlugin('sprite', SpriteRenderer);
 
 /**
  * Renders the sprite object.
@@ -352,7 +333,11 @@ SpriteRenderer.prototype.flush = function ()
 
         if (currentBaseTexture !== nextTexture || blendSwap || shaderSwap)
         {
-            this.renderBatch(currentBaseTexture, batchSize, start);
+            if (batchSize > 0)
+            {
+              this.renderer.bindTexture(currentBaseTexture, gl.TEXTURE0);
+              gl.drawElements(gl.TRIANGLES, batchSize * 6, gl.UNSIGNED_SHORT, start * 6 * 2);
+            }
 
             start = i;
             batchSize = 0;
@@ -373,62 +358,21 @@ SpriteRenderer.prototype.flush = function ()
                 if (!shader)
                 {
                     shader = currentShader.getShader(this.renderer);
-
                 }
-
-                // set shader function???
-              //  this.renderer.shaderManager.setShader(shader);
-
-                //TODO - i KNOW this can be optimised! Once v3 is stable il look at this next...
-                //this._shader.uniforms.projectionMatrix = this.renderer.currentRenderTarget.projectionMatrix.toArray(true);
-                //Make this a little more dynamic / intelligent!
-//                shader.syncUniforms();
-
-                //TODO investigate some kind of texture state managment??
-                // need to make sure this texture is the active one for all the batch swaps..
-               // gl.activeTexture(gl.TEXTURE0);
-
-                // both thease only need to be set if they are changing..
-                // set the projection
-                //gl.uniformMatrix3fv(shader.uniforms.projectionMatrix._location, false, this.renderer.currentRenderTarget.projectionMatrix.toArray(true));
-
-
             }
         }
 
         batchSize++;
     }
 
-    this.renderBatch(currentBaseTexture, batchSize, start);
+    if (batchSize > 0)
+    {
+      this.renderer.bindTexture(currentBaseTexture, gl.TEXTURE0);
+      gl.drawElements(gl.TRIANGLES, batchSize * 6, gl.UNSIGNED_SHORT, start * 6 * 2);
+    }
 
     // then reset the batch!
     this.currentBatchSize = 0;
-};
-
-/**
- * Draws the currently batches sprites.
- *
- * @private
- * @param texture {PIXI.Texture}
- * @param size {number}
- * @param startIndex {number}
- */
-SpriteRenderer.prototype.renderBatch = function (texture, size, startIndex)
-{
-    if (size === 0)
-    {
-        return;
-    }
-
-    var gl = this.renderer.gl;
-
-    this.renderer.bindTexture(texture, gl.TEXTURE0);
-
-    // now draw those suckas!
-    gl.drawElements(gl.TRIANGLES, size * 6, gl.UNSIGNED_SHORT, startIndex * 6 * 2);
-
-    // increment the draw count
-    this.renderer.drawCount++;
 };
 
 /**
@@ -439,7 +383,7 @@ SpriteRenderer.prototype.start = function ()
 {
     var gl = this.renderer.gl;
     
-    his.renderer.bindVertexArrayObject(this.vao);
+    this.renderer.bindVertexArrayObject(this.vao);
     this.renderer.bindShader(this._shader);
 };
 
@@ -461,7 +405,6 @@ SpriteRenderer.prototype.destroy = function ()
     this.vertices = null;
     this.positions = null;
     this.colors = null;
-    this.indices = null;
 
     this.vertexBuffer = null;
     this.indexBuffer = null;

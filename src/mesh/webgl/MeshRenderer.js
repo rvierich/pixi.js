@@ -27,9 +27,19 @@ function MeshRenderer(renderer)
 {
     core.ObjectRenderer.call(this, renderer);
 
-    this.currentShader = null;
+    //create the shader
+    this.shader = new MeshShader(gl);
 
-    this.firstRun = true;
+    // line up some buffers..
+    this.indexBuffer = new Buffer.createIndexBuffer(gl);
+    this.verticesBuffer = new Buffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
+    this.uvsBuffer = new Buffer.createVertexBuffer(gl);
+
+    // build the vertex array object
+    this.vao = new VertexArrayObject(gl);
+    this.vao.addIndex(this.indexBuffer);   
+    this.vao.addAttribute(this.verticesBuffer, this.shader.attributes.aVertexPosition);
+    this.vao.addAttribute(this.uvsBuffer, this.shader.attributes.aTextureCoord);
 }
 
 MeshRenderer.prototype = Object.create(core.ObjectRenderer.prototype);
@@ -45,39 +55,14 @@ core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
  */
 MeshRenderer.prototype.render = function (mesh)
 {
-
     var renderer = this.renderer,
-        gl = renderer.gl
-
-    if(this.firstRun)
-    {
-        this.firstRun = false;
-
-        this.shader = new MeshShader(gl);
-
-
-        this.indexBuffer = new Buffer.createIndexBuffer(gl);
-
-        this.verticesBuffer = new Buffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
-        this.uvsBuffer = new Buffer.createVertexBuffer(gl);
-
-        this.vao = new VertexArrayObject(gl);
-
-        this.vao.addIndex(this.indexBuffer);   
-
-        this.vao.addAttribute(this.verticesBuffer, this.shader.attributes.aVertexPosition);
-
-        this.vao.addAttribute(this.uvsBuffer, this.shader.attributes.aTextureCoord);
-
-        this.indexBuffer.upload(mesh.indices);
-
-         
-    }
+        gl = renderer.gl;
 
     renderer.blendModeManager.setBlendMode(mesh.blendMode);
 
     var shader = this.shader;
 
+    // set up the renderer...
     renderer.bindTexture(mesh._texture.baseTexture, gl.TEXTURE0);
     renderer.bindShader(shader);
     renderer.bindVertexArrayObject(this.vao);
@@ -86,14 +71,17 @@ MeshRenderer.prototype.render = function (mesh)
     shader.uniforms.translationMatrix = mesh.worldTransform.toArray(true);
     shader.uniforms.alpha = mesh.worldAlpha;    
 
+    // upload the data..
     this.verticesBuffer.upload(mesh.vertices);
     
     if (mesh.dirty)
     {
         mesh.dirty = false;
-        this.uvsBuffer.upload(mesh.uvs);    
+        this.uvsBuffer.upload(mesh.uvs); 
+        this.indexBuffer.upload(mesh.indices); 
     }
     
+    // draw the mesh
     var drawMode = mesh.drawMode === Mesh.DRAW_MODES.TRIANGLE_MESH ? gl.TRIANGLE_STRIP : gl.TRIANGLES;
     gl.drawElements(drawMode, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
 };
