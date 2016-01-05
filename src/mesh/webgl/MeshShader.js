@@ -1,5 +1,4 @@
-var core = require('../../core'),
-    Shader = require('../../core/renderers/webgl/core/GLShader');
+var GLShader = require('pixi-gl-core').GLShader;
 
 /**
  * @class
@@ -9,7 +8,7 @@ var core = require('../../core'),
  */
 function MeshShader(gl)
 {
-    Shader.call(this,
+    GLShader.call(this,
         gl,
         // vertex shader
         [
@@ -42,7 +41,7 @@ function MeshShader(gl)
     );
 }
 
-MeshShader.prototype = Object.create(Shader.prototype);
+MeshShader.prototype = Object.create(GLShader.prototype);
 MeshShader.prototype.constructor = MeshShader;
 module.exports = MeshShader;
 

@@ -1,5 +1,4 @@
 var SystemRenderer = require('../SystemRenderer'),
-    ShaderManager = require('./managers/ShaderManager'),
     MaskManager = require('./managers/MaskManager'),
     StencilManager = require('./managers/StencilManager'),
     FilterManager = require('./managers/FilterManager'),
@@ -75,13 +74,6 @@ function WebGLRenderer(width, height, options)
     this.drawCount = 0;
 
     /**
-     * Deals with managing the shader programs and their attribs.
-     *
-     * @member {PIXI.ShaderManager}
-     */
-    this.shaderManager = new ShaderManager(this);
-
-    /**
      * Manages the masks using the stencil buffer.
      *
      * @member {PIXI.MaskManager}
@@ -101,7 +93,6 @@ function WebGLRenderer(width, height, options)
      * @member {PIXI.FilterManager}
      */
     this.filterManager = new FilterManager(this);
-
 
     /**
      * Manages the blendModes
@@ -126,20 +117,14 @@ function WebGLRenderer(width, height, options)
     
    
 
-    this.prepareContext();
+    
 
     // map some webGL blend modes..
     this._mapGlModes();
 
-    /**
-     * An array of render targets
-     * @member {PIXI.RenderTarget[]}
-     * @private
-     */
-    this._renderTargetStack = [];
-
     this.textureManager = new TextureManager(this.gl);
 
+    this.prepareContext();
     this.initPlugins();
 }
 
@@ -345,11 +330,19 @@ WebGLRenderer.prototype.bindShader = function (shader)//projection, buffer)
 
 WebGLRenderer.prototype.bindVertexArrayObject = function (vbo)//projection, buffer)
 {
-    if(this._activeVertexArrayObject !== vbo)
-    {   
-        this._activeVertexArrayObject = vbo;
-        vbo.bind();
+    //if(this._activeVertexArrayObject !== vbo)
+    //{   
+    if(!vbo)
+    {
+        if(this._activeVertexArrayObject)
+        {
+            this._activeVertexArrayObject.unbind();
+        }
     }
+
+    this._activeVertexArrayObject = vbo;
+    vbo.bind();
+   // }
 }
 
 /**
@@ -407,13 +400,13 @@ WebGLRenderer.prototype.destroy = function (removeView)
     this.uid = 0;
 
     // destroy the managers
-    this.shaderManager.destroy();
+   // this.shaderManager.destroy();
     this.maskManager.destroy();
     this.stencilManager.destroy();
     this.filterManager.destroy();
     this.blendModeManager.destroy();
 
-    this.shaderManager = null;
+    //this.shaderManager = null;
     this.maskManager = null;
     this.filterManager = null;
     this.blendModeManager = null;

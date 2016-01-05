@@ -29,6 +29,7 @@ function ComplexPrimitiveShader(gl)
             '   gl_Position = vec4((projectionMatrix * translationMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);',
             '   vColor = vec4(color * alpha * tint, alpha);',//" * vec4(tint * alpha, alpha);',
             '}'
+            
         ].join('\n'),
         // fragment shader
         [

@@ -87,7 +87,6 @@ WebGLGraphicsData.prototype.upload = function () {
     var gl = this.gl;
 
     this.glPoints = new Float32Array(this.points);
-
     this.glIndices = new Uint16Array(this.indices);
 
     this.buffer.upload(this.glPoints);

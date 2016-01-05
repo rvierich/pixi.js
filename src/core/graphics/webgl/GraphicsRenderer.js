@@ -6,7 +6,7 @@ var utils = require('../../utils'),
     ComplexPrimitiveShader = require('../../renderers/webgl/shaders/_ComplexPrimitiveShader'),
     PrimitiveShader = require('../../renderers/webgl/shaders/_PrimitiveShader'),
     WebGLGraphicsData = require('./WebGLGraphicsData'),
-    
+
     glCore = require('pixi-gl-core'),
 
     earcut = require('earcut');
@@ -66,11 +66,10 @@ GraphicsRenderer.prototype.destroy = function () {
 GraphicsRenderer.prototype.render = function(graphics)
 {
 
-    var renderer = this.renderer;
-    var gl = renderer.gl;
-
-    var shader = renderer.shaderManager.plugins.primitiveShader,
-        webGLData;
+    var renderer = this.renderer,
+    gl = renderer.gl,
+    shader, 
+    webGLData;
 
     if (graphics.dirty || !graphics._webGL[gl.id])
     {
@@ -97,9 +96,6 @@ GraphicsRenderer.prototype.render = function(graphics)
             renderer.stencilManager.pushStencil(graphics, webGLData);
 
             this.complexPrimitiveShader.uniforms.alpha = graphics.worldAlpha * webGLData.alpha;
-            
-
-            //gl.uniform1f(renderer.shaderManager.complexPrimitiveShader.uniforms.alpha._location, graphics.worldAlpha * webGLData.alpha);
 
             // render quad..
             gl.drawElements(gl.TRIANGLE_FAN, 4, gl.UNSIGNED_SHORT, ( webGLData.indices.length - 4 ) * 2 );
@@ -108,8 +104,8 @@ GraphicsRenderer.prototype.render = function(graphics)
         }
         else
         {
-            shader = this.primitiveShader;//renderer.shaderManager.primitiveShader;
-            
+            shader = this.primitiveShader;
+
             renderer.bindShader(shader);
 
             shader.uniforms.translationMatrix = graphics.worldTransform.toArray(true);
@@ -125,7 +121,7 @@ GraphicsRenderer.prototype.render = function(graphics)
 
             // set the index buffer!
             webGLData.indexBuffer.bind();
-            
+
             //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webGLData.indexBuffer);
             gl.drawElements(gl.TRIANGLE_STRIP,  webGLData.indices.length, gl.UNSIGNED_SHORT, 0 );
         }
@@ -198,6 +194,8 @@ GraphicsRenderer.prototype.updateGraphics = function(graphics)
                 }
             }
 
+              console.log("HI")
+              
             // MAKE SURE WE HAVE THE CORRECT TYPE..
             if (data.fill)
             {
@@ -218,6 +216,7 @@ GraphicsRenderer.prototype.updateGraphics = function(graphics)
                     }
                     else
                     {
+
                         webGLData = this.switchMode(webGL, 1);
                         this.buildComplexPoly(data, webGLData);
                     }

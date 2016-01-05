@@ -1,9 +1,10 @@
 var core = require('../../core'),
     Mesh = require('../Mesh'),
-    VertexArrayObject = require('../../core/renderers/webgl/core/VertexArrayObject'),
-    Buffer = require('../../core/renderers/webgl/core/GLBuffer'),
-    Shader = require('../../core/renderers/webgl/core/GLShader'),
-    MeshShader = require('./MeshShader')
+    VertexArrayObject = require('pixi-gl-core').VertexArrayObject,
+    GLBuffer = require('pixi-gl-core').GLBuffer,
+    GLShader = require('pixi-gl-core').GLShader,
+    MeshShader = require('./MeshShader');
+    
 /**
  * @author Mat Groves
  *
@@ -31,9 +32,9 @@ function MeshRenderer(renderer)
     this.shader = new MeshShader(gl);
 
     // line up some buffers..
-    this.indexBuffer = new Buffer.createIndexBuffer(gl);
-    this.verticesBuffer = new Buffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
-    this.uvsBuffer = new Buffer.createVertexBuffer(gl);
+    this.indexBuffer = new GLBuffer.createIndexBuffer(gl);
+    this.verticesBuffer = new GLBuffer.createVertexBuffer(gl, null, gl.DYNAMIC_DRAW);
+    this.uvsBuffer = new GLBuffer.createVertexBuffer(gl);
 
     // build the vertex array object
     this.vao = new VertexArrayObject(gl);

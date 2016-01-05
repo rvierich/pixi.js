@@ -1,27 +1,39 @@
 var WebGLManager = require('./WebGLManager'),
-    utils = require('../../../utils');
+    utils = require('../../../utils'),
+    ComplexPrimitiveShader = require('../shaders/_ComplexPrimitiveShader'),
+    PrimitiveShader = require('../shaders/_PrimitiveShader'),
+    glCore = require('pixi-gl-core');
 
 /**
+ * 
  * @class
  * @memberof PIXI
  * @param renderer {PIXI.WebGLRenderer} The renderer this manager works for.
  */
-function WebGLMaskManager(renderer)
+function StencilManager(renderer)
 {
     WebGLManager.call(this, renderer);
     this.stencilMaskStack = null;
+
+    //TODO - shader cache?
+    var gl = renderer.gl;
+
+    this.primitiveShader = new PrimitiveShader(gl);
+    this.complexPrimitiveShader = new ComplexPrimitiveShader(gl);
+
 }
 
-WebGLMaskManager.prototype = Object.create(WebGLManager.prototype);
-WebGLMaskManager.prototype.constructor = WebGLMaskManager;
-module.exports = WebGLMaskManager;
+StencilManager.prototype = Object.create(WebGLManager.prototype);
+StencilManager.prototype.constructor = StencilManager;
+module.exports = StencilManager;
+
 
 /**
  * Changes the mask stack that is used by this manager.
  *
  * @param stencilMaskStack {PIXI.StencilMaskStack} The mask stack
  */
-WebGLMaskManager.prototype.setMaskStack = function ( stencilMaskStack )
+StencilManager.prototype.setMaskStack = function ( stencilMaskStack )
 {
     this.stencilMaskStack = stencilMaskStack;
 
@@ -43,9 +55,9 @@ WebGLMaskManager.prototype.setMaskStack = function ( stencilMaskStack )
  * @param graphics {PIXI.Graphics}
  * @param webGLData {any[]}
  */
-WebGLMaskManager.prototype.pushStencil = function (graphics, webGLData)
+StencilManager.prototype.pushStencil = function (graphics, webGLData)
 {
-    this.renderer.currentRenderTarget.attachStencilBuffer();
+    this.renderer._activeRenderTarget.attachStencilBuffer();
 
     var gl = this.renderer.gl,
         sms = this.stencilMaskStack;
@@ -137,7 +149,7 @@ WebGLMaskManager.prototype.pushStencil = function (graphics, webGLData)
  * @param graphics {PIXI.Graphics}
  * @param webGLData {any[]}
  */
-WebGLMaskManager.prototype.bindGraphics = function (graphics, webGLData)
+StencilManager.prototype.bindGraphics = function (graphics, webGLData)
 {
     //if (this._currentGraphics === graphics)return;
     var gl = this.renderer.gl;
@@ -147,51 +159,67 @@ WebGLMaskManager.prototype.bindGraphics = function (graphics, webGLData)
 
     if (webGLData.mode === 1)
     {
-        shader = this.renderer.shaderManager.complexPrimitiveShader;
+        shader = this.complexPrimitiveShader;
 
-        this.renderer.shaderManager.setShader(shader);
+        this.renderer.bindShader(shader);
+        glCore.setVertexAttribArrays( gl, shader.attributes );
 
+        shader.uniforms.translationMatrix = graphics.worldTransform.toArray(true);
+        shader.uniforms.tint = utils.hex2rgb(graphics.tint);
+        shader.uniforms.alpha = graphics.worldAlpha;
+        shader.uniforms.color = webGLData.color;
+/*
         gl.uniformMatrix3fv(shader.uniforms.translationMatrix._location, false, graphics.worldTransform.toArray(true));
-
-        gl.uniformMatrix3fv(shader.uniforms.projectionMatrix._location, false, this.renderer.currentRenderTarget.projectionMatrix.toArray(true));
 
         gl.uniform3fv(shader.uniforms.tint._location, utils.hex2rgb(graphics.tint));
 
         gl.uniform3fv(shader.uniforms.color._location, webGLData.color);
 
         gl.uniform1f(shader.uniforms.alpha._location, graphics.worldAlpha);
+*/
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, webGLData.buffer);
+        webGLData.buffer.bind();
 
-        gl.vertexAttribPointer(shader.attributes.aVertexPosition, 2, gl.FLOAT, false, 4 * 2, 0);
-
+        gl.vertexAttribPointer(shader.attributes.aVertexPosition.location, 2, gl.FLOAT, false, 4 * 2, 0);
 
         // now do the rest..
         // set the index buffer!
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webGLData.indexBuffer);
+        webGLData.indexBuffer.bind();
     }
     else
     {
         //this.renderer.shaderManager.activatePrimitiveShader();
-        shader = this.renderer.shaderManager.primitiveShader;
+        shader = this.primitiveShader;
 
-        this.renderer.shaderManager.setShader(shader);
+        this.renderer.bindShader(shader);
+        glCore.setVertexAttribArrays( gl, shader.attributes );
+       // gl.enableVertexAttribArray(0);
+       // gl.enableVertexAttribArray(1);
 
-        gl.uniformMatrix3fv(shader.uniforms.translationMatrix._location, false, graphics.worldTransform.toArray(true));
+        shader.uniforms.translationMatrix = graphics.worldTransform.toArray(true);
+        shader.uniforms.tint = webGLData.color;
+        shader.uniforms.alpha = graphics.worldAlpha;
 
-        gl.uniformMatrix3fv(shader.uniforms.projectionMatrix._location, false, this.renderer.currentRenderTarget.projectionMatrix.toArray(true));
+        //gl.uniformMatrix3fv(shader.uniforms.translationMatrix._location, false, graphics.worldTransform.toArray(true));
 
-        gl.uniform3fv(shader.uniforms.tint._location, utils.hex2rgb(graphics.tint));
+        //gl.uniformMatrix3fv(shader.uniforms.projectionMatrix._location, false, this.renderer.currentRenderTarget.projectionMatrix.toArray(true));
 
-        gl.uniform1f(shader.uniforms.alpha._location, graphics.worldAlpha);
+        //gl.uniform3fv(shader.uniforms.tint._location, utils.hex2rgb(graphics.tint));
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, webGLData.buffer);
+        //gl.uniform1f(shader.uniforms.alpha._location, graphics.worldAlpha);
 
-        gl.vertexAttribPointer(shader.attributes.aVertexPosition, 2, gl.FLOAT, false, 4 * 6, 0);
-        gl.vertexAttribPointer(shader.attributes.aColor, 4, gl.FLOAT, false,4 * 6, 2 * 4);
+        webGLData.buffer.bind();
+
+
+        //gl.bindBuffer(gl.ARRAY_BUFFER, webGLData.buffer);
+
+        gl.vertexAttribPointer(shader.attributes.aVertexPosition.location, 2, gl.FLOAT, false, 4 * 6, 0);
+        gl.vertexAttribPointer(shader.attributes.aColor.location, 4, gl.FLOAT, false,4 * 6, 2 * 4);
 
         // set the index buffer!
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webGLData.indexBuffer);
+        webGLData.indexBuffer.bind();
+
+        //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webGLData.indexBuffer);
     }
 };
 
@@ -200,7 +228,7 @@ WebGLMaskManager.prototype.bindGraphics = function (graphics, webGLData)
  * @param graphics {PIXI.Graphics}
  * @param webGLData {any[]}
  */
-WebGLMaskManager.prototype.popStencil = function (graphics, webGLData)
+StencilManager.prototype.popStencil = function (graphics, webGLData)
 {
     var gl = this.renderer.gl,
         sms = this.stencilMaskStack;
@@ -299,7 +327,7 @@ WebGLMaskManager.prototype.popStencil = function (graphics, webGLData)
  * Destroys the mask stack.
  *
  */
-WebGLMaskManager.prototype.destroy = function ()
+StencilManager.prototype.destroy = function ()
 {
     WebGLManager.prototype.destroy.call(this);
 
@@ -311,7 +339,7 @@ WebGLMaskManager.prototype.destroy = function ()
  *
  * @param maskData {any[]} The mask data structure to use
  */
-WebGLMaskManager.prototype.pushMask = function (maskData)
+StencilManager.prototype.pushMask = function (maskData)
 {
 
 
@@ -335,7 +363,7 @@ WebGLMaskManager.prototype.pushMask = function (maskData)
  *
  * @param maskData {any[]}
  */
-WebGLMaskManager.prototype.popMask = function (maskData)
+StencilManager.prototype.popMask = function (maskData)
 {
     this.renderer.setObjectRenderer(this.renderer.plugins.graphics);
 
