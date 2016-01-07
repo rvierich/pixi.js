@@ -73,8 +73,6 @@ GraphicsRenderer.prototype.render = function(graphics)
 
     if (graphics.dirty || !graphics._webGL[gl.id])
     {
-     //   this.renderer.bindVertexArrayObject(null);
-
         this.updateGraphics(graphics);
     }
 
@@ -84,18 +82,9 @@ GraphicsRenderer.prototype.render = function(graphics)
 
     renderer.blendModeManager.setBlendMode( graphics.blendMode );
 
-    shader = this.primitiveShader;
-
-    renderer.bindShader(shader);
-
-    shader.uniforms.translationMatrix = graphics.worldTransform.toArray(true);
-    shader.uniforms.tint = utils.hex2rgb(graphics.tint);
-    shader.uniforms.alpha = graphics.worldAlpha;
-
 //    var matrix =  graphics.worldTransform.clone();
 //    var matrix =  renderer.currentRenderTarget.projectionMatrix.clone();
 //    matrix.append(graphics.worldTransform);
-    
 
     for (var i = 0, n = webGL.data.length; i < n; i++)
     {
@@ -103,7 +92,7 @@ GraphicsRenderer.prototype.render = function(graphics)
 
         if (webGL.data[i].mode === 1)
         {
-/*
+
             renderer.stencilManager.pushStencil(graphics, webGLData);
 
             this.complexPrimitiveShader.uniforms.alpha = graphics.worldAlpha * webGLData.alpha;
@@ -111,37 +100,34 @@ GraphicsRenderer.prototype.render = function(graphics)
             // render quad..
             gl.drawElements(gl.TRIANGLE_FAN, 4, gl.UNSIGNED_SHORT, ( webGLData.indices.length - 4 ) * 2 );
 
-            renderer.stencilManager.popStencil(graphics, webGLData);*/
+            renderer.stencilManager.popStencil(graphics, webGLData);
         }
         else
         {
-            
+            shader = this.primitiveShader;
 
+            renderer.bindShader(shader);
 
-            renderer.bindVertexArrayObject(webGLData.vao);
+            shader.uniforms.translationMatrix = graphics.worldTransform.toArray(true);
+            shader.uniforms.tint = utils.hex2rgb(graphics.tint);
+            shader.uniforms.alpha = graphics.worldAlpha;
 
-            //webGLData.buffer.bind();
-            webGLData.indexBuffer.bind();
-            
-            gl.drawElements(gl.TRIANGLE_STRIP,  webGLData.indices.length, gl.UNSIGNED_SHORT, 0 );
-            
-            //glCore.setVertexAttribArrays( gl, shader.attributes );
+            webGLData.buffer.bind();
 
-            //shader.attributes.aVertexPosition.pointer(gl.FLOAT, false, 4 * 6, 0);
-//            shader.attributes.aColor.pointer(gl.FLOAT, false,4 * 6, 2 * 4);
+            glCore.setVertexAttribArrays( gl, shader.attributes );
+
+            shader.attributes.aVertexPosition.pointer(gl.FLOAT, false, 4 * 6, 0);
+            shader.attributes.aColor.pointer(gl.FLOAT, false,4 * 6, 2 * 4);
 
             // set the index buffer!
-  //          webGLData.indexBuffer.bind();
+            webGLData.indexBuffer.bind();
 
             //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webGLData.indexBuffer);
-   
-            //webGLData.vao.unbind()
+            gl.drawElements(gl.TRIANGLE_STRIP,  webGLData.indices.length, gl.UNSIGNED_SHORT, 0 );
         }
 
         renderer.drawCount++;
     }
-
-
 };
 
 /**
@@ -152,8 +138,8 @@ GraphicsRenderer.prototype.render = function(graphics)
  */
 GraphicsRenderer.prototype.updateGraphics = function(graphics)
 {
-
     var gl = this.renderer.gl;
+
      // get the contexts graphics object
     var webGL = graphics._webGL[gl.id];
 
@@ -283,12 +269,11 @@ GraphicsRenderer.prototype.updateGraphics = function(graphics)
  */
 GraphicsRenderer.prototype.switchMode = function (webGL, type)
 {
-
     var webGLData;
 
     if (!webGL.data.length)
     {
-        webGLData = this.graphicsDataPool.pop() || new WebGLGraphicsData(webGL.gl, this.primitiveShader.attributes);
+        webGLData = this.graphicsDataPool.pop() || new WebGLGraphicsData(webGL.gl);
         webGLData.mode = type;
         webGL.data.push(webGLData);
     }
@@ -298,7 +283,7 @@ GraphicsRenderer.prototype.switchMode = function (webGL, type)
 
         if ((webGLData.points.length > 320000) || webGLData.mode !== type || type === 1)
         {
-            webGLData = this.graphicsDataPool.pop() || new WebGLGraphicsData(webGL.gl, this.primitiveShader.attributes);
+            webGLData = this.graphicsDataPool.pop() || new WebGLGraphicsData(webGL.gl);
             webGLData.mode = type;
             webGL.data.push(webGLData);
         }

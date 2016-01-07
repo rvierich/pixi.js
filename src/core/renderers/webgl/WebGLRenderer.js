@@ -5,7 +5,7 @@ var SystemRenderer = require('../SystemRenderer'),
     BlendModeManager = require('./managers/BlendModeManager'),
     RenderTarget = require('./utils/RenderTarget'),
     ObjectRenderer = require('./utils/ObjectRenderer'),
-    createContext = require('pixi-gl-core').createContext;
+    createContext = require('pixi-gl-core').createContext,
     TextureManager = require('./TextureManager'),
     utils = require('../../utils'),
     CONST = require('../../const');
@@ -37,7 +37,7 @@ var SystemRenderer = require('../SystemRenderer'),
 function WebGLRenderer(width, height, options)
 {
     options = options || {};
-
+    
     SystemRenderer.call(this, 'WebGL', width, height, options);
 
     /**
@@ -65,6 +65,7 @@ function WebGLRenderer(width, height, options)
 
     this.gl = createContext(this.view, options);
     
+
 
     /**
      * Counter for the number of draws made each frame
@@ -126,6 +127,7 @@ function WebGLRenderer(width, height, options)
 
     this.prepareContext();
     this.initPlugins();
+
 }
 
 // constructor
@@ -148,6 +150,9 @@ WebGLRenderer.prototype.prepareContext = function ()
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);
     gl.enable(gl.BLEND);
+
+    // this should ALWAYS be active..
+    gl.enableVertexAttribArray(0);
 
     this.renderTarget = new RenderTarget(gl, this.width, this.height, null, this.resolution, true);
 
@@ -341,7 +346,7 @@ WebGLRenderer.prototype.bindVertexArrayObject = function (vbo)//projection, buff
     }
 
     this._activeVertexArrayObject = vbo;
-    vbo.bind();
+    if(vbo)vbo.bind();
    // }
 }
 

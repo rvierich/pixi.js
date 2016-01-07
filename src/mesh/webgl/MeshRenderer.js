@@ -2,7 +2,6 @@ var core = require('../../core'),
     Mesh = require('../Mesh'),
     VertexArrayObject = require('pixi-gl-core').VertexArrayObject,
     GLBuffer = require('pixi-gl-core').GLBuffer,
-    GLShader = require('pixi-gl-core').GLShader,
     MeshShader = require('./MeshShader');
     
 /**
@@ -28,8 +27,12 @@ function MeshRenderer(renderer)
 {
     core.ObjectRenderer.call(this, renderer);
 
+    var gl = renderer.gl;
+
     //create the shader
     this.shader = new MeshShader(gl);
+
+    
 
     // line up some buffers..
     this.indexBuffer = new GLBuffer.createIndexBuffer(gl);

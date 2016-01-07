@@ -1,4 +1,5 @@
-var GLBuffer = require('pixi-gl-core').GLBuffer;
+var GLBuffer = require('pixi-gl-core').GLBuffer,
+    VertexArrayObject = require('pixi-gl-core').VertexArrayObject;
 
 /**
  * An object containing WebGL specific properties to be used by the WebGL renderer
@@ -8,7 +9,7 @@ var GLBuffer = require('pixi-gl-core').GLBuffer;
  * @param gl {WebGLRenderingContext} the current WebGL drawing context
  * @private
  */
-function WebGLGraphicsData(gl) {
+function WebGLGraphicsData(gl, attributes) {
 
     /**
      * The current WebGL drawing context
@@ -35,6 +36,8 @@ function WebGLGraphicsData(gl) {
      * @member {number[]}
      */
     this.indices = [];
+
+   
     /**
      * The main buffer
      * @member {WebGLBuffer}
@@ -47,6 +50,17 @@ function WebGLGraphicsData(gl) {
      */
     this.indexBuffer = GLBuffer.createIndexBuffer(gl);
 
+    this.vao = new VertexArrayObject(gl);
+
+//    console.log(attributes.aVertexPosition);
+
+    // build a nice vao!
+    this.vao.addIndex(this.indexBuffer);
+
+    this.vao.addAttribute(this.buffer, attributes.aVertexPosition, gl.FLOAT, false, 4 * 6 , 0);
+    this.vao.addAttribute(this.buffer, attributes.aColor, gl.FLOAT, false, 4 * 6 , 2 * 4);
+
+//    this.vao.bind();
     /**
      * todo @alvin
      * @member {number}
