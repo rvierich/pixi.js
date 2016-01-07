@@ -64,7 +64,8 @@ function Sprite(texture)
      * @member {number}
      * @default 0xFFFFFF
      */
-    this.tint = 0xFFFFFF;
+    this._tint = 0xFFFFFF;
+    this._tintUint = 0xFFFFFF;
 
     /**
      * The blend mode to be applied to the sprite. Apply a value of `PIXI.BLEND_MODES.NORMAL` to reset the blend mode.
@@ -135,6 +136,19 @@ Object.defineProperties(Sprite.prototype, {
             var sign = utils.sign(this.scale.y) || 1;
             this.scale.y = sign * value / this.texture._frame.height;
             this._height = value;
+        }
+    },
+
+    tint: {
+        get: function ()
+        {
+            return  this._tint;
+        },
+        set: function (value)
+        {
+            this._tint = value;
+            this._tintUint = (value >> 16) + (value & 0xff00) + ((value & 0xff) << 16);
+
         }
     },
 

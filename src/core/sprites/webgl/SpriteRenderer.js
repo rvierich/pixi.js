@@ -6,7 +6,7 @@ var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     VertexArrayObject = require('pixi-gl-core').VertexArrayObject,
     GLBuffer = require('pixi-gl-core').GLBuffer,
     
-    createIndicesForQuads = require('../../renderers/webgl/utils/createIndicesForQuads')
+    createIndicesForQuads = require('../../renderers/webgl/utils/createIndicesForQuads');
 
 /**
  * @author Mat Groves
@@ -38,7 +38,7 @@ function SpriteRenderer(renderer)
      *
      * @member {number}
      */
-    this.vertSize = 5;
+    this.vertSize = 4;
 
     /**
      * The size of the vertex information in bytes.
@@ -52,7 +52,7 @@ function SpriteRenderer(renderer)
      *
      * @member {number}
      */
-    this.size = CONST.SPRITE_BATCH_SIZE; // 2000 is a nice balance between mobile / desktop
+    this.size = 1// CONST.SPRITE_BATCH_SIZE; // 2000 is a nice balance between mobile / desktop
 
     // the total number of bytes in our batch
     var numVerts = (this.size * 4) * this.vertByteSize;
@@ -73,6 +73,9 @@ function SpriteRenderer(renderer)
     
     //TODO test performace
     this.positions = new Float32Array(this.vertices);
+    
+
+    this.uvs = new Uint32Array(this.vertices);
 
     /**
      * View on the vertices as a Uint32Array for colors
@@ -125,23 +128,23 @@ function SpriteRenderer(renderer)
     this.vao.addAttribute(this.verticesBuffer
                          ,this._shader.attributes.aVertexPosition
                          ,gl.FLOAT
-                         ,this.vertByteSize
                          ,false
+                         ,this.vertByteSize
                          ,0);
 
     this.vao.addAttribute(this.verticesBuffer
                          ,this._shader.attributes.aTextureCoord
-                         ,gl.FLOAT
+                         ,gl.UNSIGNED_SHORT
+                         ,true
                          ,this.vertByteSize
-                         ,false
                          ,2 * 4);
 
     this.vao.addAttribute(this.verticesBuffer 
                          ,this._shader.attributes.aColor
                          ,gl.UNSIGNED_BYTE
-                         ,this.vertByteSize
                          ,true
-                         ,4 * 4);
+                         ,this.vertByteSize
+                         ,3 * 4);
 }
 
 SpriteRenderer.prototype = Object.create(ObjectRenderer.prototype);
@@ -218,6 +221,7 @@ SpriteRenderer.prototype.render = function (sprite)
 
     if (this.renderer.roundPixels)
     {
+        
         var resolution = this.renderer.resolution;
 
         // xy
@@ -235,48 +239,35 @@ SpriteRenderer.prototype.render = function (sprite)
         // xy
         positions[index+15] = (((a * w1 + c * h0 + tx) * resolution) | 0) / resolution;
         positions[index+16] = (((d * h0 + b * w1 + ty) * resolution) | 0) / resolution;
+        
     }
     else
     {
-
         // xy
         positions[index] = a * w1 + c * h1 + tx;
         positions[index+1] = d * h1 + b * w1 + ty;
 
         // xy
-        positions[index+5] = a * w0 + c * h1 + tx;
-        positions[index+6] = d * h1 + b * w0 + ty;
+        positions[index+4] = a * w0 + c * h1 + tx;
+        positions[index+5] = d * h1 + b * w0 + ty;
 
          // xy
-        positions[index+10] = a * w0 + c * h0 + tx;
-        positions[index+11] = d * h0 + b * w0 + ty;
+        positions[index+8] = a * w0 + c * h0 + tx;
+        positions[index+9] = d * h0 + b * w0 + ty;
 
         // xy
-        positions[index+15] = a * w1 + c * h0 + tx;
-        positions[index+16] = d * h0 + b * w1 + ty;
+        positions[index+12] = a * w1 + c * h0 + tx;
+        positions[index+13] = d * h0 + b * w1 + ty;
     }
 
-    // uv
-    positions[index+2] = uvs.x0;
-    positions[index+3] = uvs.y0;
+    // upload som uvs!
+    this.uvs[index + 2] = uvs.xy0_uint32;
+    this.uvs[index + 6] = uvs.xy1_uint32;
+    this.uvs[index + 10] = uvs.xy2_uint32;
+    this.uvs[index + 14] = uvs.xy3_uint32;
 
-    // uv
-    positions[index+7] = uvs.x1;
-    positions[index+8] = uvs.y1;
-
-     // uv
-    positions[index+12] = uvs.x2;
-    positions[index+13] = uvs.y2;
-
-    // uv
-    positions[index+17] = uvs.x3;
-    positions[index+18] = uvs.y3;
-
-    // color and alpha
-    var tint = sprite.tint;
-    colors[index+4] = colors[index+9] = colors[index+14] = colors[index+19] = (tint >> 16) + (tint & 0xff00) + ((tint & 0xff) << 16) + (sprite.worldAlpha * 255 << 24);
-
-    // increment the batchsize
+    colors[index+3] = colors[index+7] = colors[index+11] = colors[index+15] = sprite._tintUint + (sprite.worldAlpha * 255 << 24);
+ 
     this.sprites[this.currentBatchSize++] = sprite;
 };
 
