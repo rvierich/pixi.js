@@ -29,13 +29,15 @@ function SpriteRenderer(renderer)
 {
     ObjectRenderer.call(this, renderer);
 
+    this.texturesToBatch = 16;
+
     /**
      * Number of values sent in the vertex buffer.
      * positionX, positionY, colorR, colorG, colorB = 5
      *
      * @member {number}
      */
-    this.vertSize = 4;
+    this.vertSize = 5;
 
     /**
      * The size of the vertex information in bytes.
@@ -113,6 +115,9 @@ function SpriteRenderer(renderer)
      * @member {PIXI.Shader}
      */
     this.shader = null;
+
+    this.textureCount = 0;
+    this.textureArray = [];
 }
 
 SpriteRenderer.prototype = Object.create(ObjectRenderer.prototype);
@@ -132,6 +137,14 @@ SpriteRenderer.prototype.onContextChange = function ()
     var gl = this.renderer.gl;
 
     this._shader = new TextureShader(gl);
+    this._shader.bind();
+
+    // set default uniforms..
+    this._shader.uniforms.uSamplers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+  //  var textureLoc = gl.getUniformLocation(this._shader.program, "uSamplers");
+    // Tell the shader to use texture units 0 to 3
+//    gl.uniform1iv(textureLoc, [0, 1, 2, 3]);
 
     // setup default shader
     this.shader = this.renderer.shaderManager.defaultShader;
@@ -147,6 +160,7 @@ SpriteRenderer.prototype.onContextChange = function ()
     this.vao.addAttribute(this.vertexBuffer, this._shader.attributes.aVertexPosition, gl.FLOAT, false, this.vertByteSize, 0);
     this.vao.addAttribute(this.vertexBuffer, this._shader.attributes.aTextureCoord, gl.UNSIGNED_SHORT, true, this.vertByteSize, 2 * 4);
     this.vao.addAttribute(this.vertexBuffer, this._shader.attributes.aColor, gl.UNSIGNED_BYTE, true, this.vertByteSize, 3 * 4);
+    this.vao.addAttribute(this.vertexBuffer, this._shader.attributes.aTextureId, gl.FLOAT, false, this.vertByteSize, 4 * 4);
 
     this.currentBlendMode = 99999;
 };
@@ -158,6 +172,7 @@ SpriteRenderer.prototype.onContextChange = function ()
  */
 SpriteRenderer.prototype.render = function (sprite)
 {
+
     //TODO set blend modes..
     // check texture..
     if (this.currentBatchSize >= this.size)
@@ -165,61 +180,21 @@ SpriteRenderer.prototype.render = function (sprite)
         this.flush();
     }
 
-    // get the uvs for the texture
-    var uvs = sprite.texture._uvs;
-
-    // if the uvs have not updated then no point rendering just yet!
-    if (!uvs)
-    {
-        return;
-    }
-
-    // TODO trim??
-    var index = this.currentBatchSize * this.vertByteSize;
-
-    var colors = this.colors;
-    var positions = this.positions;
-
-    var vertexData = sprite.vertexData
-
-    positions[index] = vertexData[0];
-    positions[index+1] = vertexData[1];
-
-    // xy
-    positions[index+4] = vertexData[2];
-    positions[index+5] = vertexData[3];
-
-     // xy
-    positions[index+8] = vertexData[4];
-    positions[index+9] = vertexData[5];
-
-    // xy
-    positions[index+12] = vertexData[6];
-    positions[index+13] = vertexData[7];
     
 
     // upload som uvs!
-    this.uvs[index + 2] = uvs.uvs_uint32[0];
-    this.uvs[index + 6] = uvs.uvs_uint32[1];
-    this.uvs[index + 10] = uvs.uvs_uint32[2];
-    this.uvs[index + 14] = uvs.uvs_uint32[3];
+    
+    
+    
+   
 
-    var tint = sprite.tint;
-    colors[index+3] = colors[index+7] = colors[index+11] = colors[index+15] = (tint >> 16) + (tint & 0xff00) + ((tint & 0xff) << 16) + (sprite.worldAlpha * 255 << 24);
+    
+//    colors[index+3] = colors[index+7] = colors[index+11] = colors[index+15] = 
 
 
     // increment the batchsize
     this.sprites[this.currentBatchSize++] = sprite;
 };
-
-// TODO - render a chunk of sprites!
-SpriteRenderer.prototype.renderSprites = function (sprites)
-{
-    for (var i = 0; i < sprites.length; i++) 
-    {
-      //  sprites[i]
-    };
-}
 
 /**
  * Renders the content and empties the current batch.
@@ -227,6 +202,8 @@ SpriteRenderer.prototype.renderSprites = function (sprites)
  */
 SpriteRenderer.prototype.flush = function ()
 {
+    this.textureArray.length = 0;
+
     // If the batch is length 0 then return as there is nothing to draw
     if (this.currentBatchSize === 0)
     {
@@ -235,6 +212,123 @@ SpriteRenderer.prototype.flush = function ()
 
     var gl = this.renderer.gl;
     var shader;
+
+    
+    var nextTexture, nextBlendMode, nextShader;
+    var batchSize = 0;
+    var start = 0;
+
+    var currentBaseTexture = null;
+    var currentBlendMode = this.renderer.blendModeManager.currentBlendMode;
+    var currentShader = null;
+
+    var blendSwap = false;
+    var shaderSwap = false;
+    var sprite;
+
+    var textureId = 999;
+  //  console.log(gl.getParameter(gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS))
+    for (var i = 0, j = this.currentBatchSize; i < j; i++)
+    {
+        sprite = this.sprites[i];
+
+        nextTexture = sprite._texture.baseTexture;
+        nextBlendMode = sprite.blendMode;
+        nextShader = sprite.shader || this.shader;
+
+        blendSwap = currentBlendMode !== nextBlendMode;
+        shaderSwap = currentShader !== nextShader; // should I use uidS???
+
+        if (currentBaseTexture !== nextTexture)// || blendSwap || shaderSwap)
+        {
+            
+            currentBaseTexture = nextTexture;
+
+            if(nextTexture && !nextTexture._active)
+            {
+                nextTexture._active = true;
+                this.textureArray[this.textureCount] = nextTexture;
+                textureId = nextTexture._id = this.textureCount++;
+
+                if(this.textureCount > 4)
+                {
+                    this.renderBatch(currentBaseTexture, batchSize, start);
+        
+                    start = i;
+                    batchSize = 0;
+                }
+            }
+            else
+            {
+                textureId = nextTexture._id;
+            }
+
+            if (blendSwap)
+            {
+                currentBlendMode = nextBlendMode;
+                this.renderer.blendModeManager.setBlendMode( currentBlendMode );
+            }
+           
+            if (shaderSwap)
+            {
+                this.renderer.bindShader(this._shader);
+            }
+        }
+
+
+        // get the uvs for the texture
+        var uvs = sprite.texture._uvs;
+
+        // if the uvs have not updated then no point rendering just yet!
+        if (!uvs)
+        {
+            continue;
+        }
+
+        // TODO trim??
+        var index = i * this.vertByteSize;
+
+        var colors = this.colors;
+        var positions = this.positions;
+
+        var vertexData = sprite.vertexData
+
+        var tint = sprite.tint;
+        var uintTint = (tint >> 16) + (tint & 0xff00) + ((tint & 0xff) << 16) + (sprite.worldAlpha * 255 << 24);
+
+        var ix = index;
+
+        // xy
+        positions[ix++] = vertexData[0];
+        positions[ix++] = vertexData[1];
+        this.uvs[ix++] = uvs.uvs_uint32[0];
+        colors[ix++] = uintTint
+        positions[ix++] = textureId
+        
+        // xy
+        positions[ix++] = vertexData[2];
+        positions[ix++] = vertexData[3];
+        this.uvs[ix++] = uvs.uvs_uint32[1];
+        colors[ix++] = uintTint;
+        positions[ix++] = textureId;
+
+         // xy
+        positions[ix++] = vertexData[4];
+        positions[ix++] = vertexData[5];
+        this.uvs[ix++] = uvs.uvs_uint32[2];
+        colors[ix++] = uintTint;
+        positions[ix++] = textureId;
+
+        // xy
+        positions[ix++] = vertexData[6];
+        positions[ix++] = vertexData[7];
+        this.uvs[ix++] = uvs.uvs_uint32[3];
+        colors[ix++] = uintTint;
+        positions[ix++] = textureId;
+
+        batchSize++;
+        
+    }
 
     // do some smart array stuff..
     // double size so we dont alway subarray the elements..
@@ -250,64 +344,18 @@ SpriteRenderer.prototype.flush = function ()
         this.vertexBuffer.upload(view, 0, true);
     }
 
-    var nextTexture, nextBlendMode, nextShader;
-    var batchSize = 0;
-    var start = 0;
-
-    var currentBaseTexture = null;
-    var currentBlendMode = this.renderer.blendModeManager.currentBlendMode;
-    var currentShader = null;
-
-    var blendSwap = false;
-    var shaderSwap = false;
-    var sprite;
-
-    for (var i = 0, j = this.currentBatchSize; i < j; i++)
-    {
-
-        sprite = this.sprites[i];
-
-        nextTexture = sprite._texture.baseTexture;
-        nextBlendMode = sprite.blendMode;
-        nextShader = sprite.shader || this.shader;
-
-        blendSwap = currentBlendMode !== nextBlendMode;
-        shaderSwap = currentShader !== nextShader; // should I use uidS???
-
-        if (currentBaseTexture !== nextTexture || blendSwap || shaderSwap)
-        {
-            this.renderBatch(currentBaseTexture, batchSize, start);
-
-            start = i;
-            batchSize = 0;
-            currentBaseTexture = nextTexture;
-
-            if (blendSwap)
-            {
-                currentBlendMode = nextBlendMode;
-                this.renderer.blendModeManager.setBlendMode( currentBlendMode );
-            }
-
-            if (shaderSwap)
-            {
-                currentShader = nextShader;
-
-                shader = currentShader.shaders ? currentShader.shaders[gl.id] : currentShader;
-
-                if (!shader)
-                {
-                    shader = currentShader.getShader(this.renderer);
-                }
-
-                //TODO custom shaders?
-                this.renderer.bindShader(this._shader);
-            }
-        }
-
-        batchSize++;
-    }
 
     this.renderBatch(currentBaseTexture, batchSize, start);
+    
+    // clean
+    for (var i = 0; i < this.textureCount; i++) 
+    {
+        this.textureArray[i]._active = false;
+    };
+    
+    this.textureArray.length = 0;
+
+    this.textureCount = 0;
 
     // then reset the batch!
     this.currentBatchSize = 0;
@@ -331,8 +379,13 @@ SpriteRenderer.prototype.renderBatch = function (texture, size, startIndex)
     var gl = this.renderer.gl;
 
     // bind the texture..
-    this.renderer.bindTexture(texture, 0);
-    
+     
+  //  console.log(this._shader.uniforms.uSamplers)
+    for (var i = 0; i < this.textureCount; i++) 
+    {
+         this.renderer.bindTexture(this.textureArray[i], i);
+    };
+
     // now draw those suckas!
     gl.drawElements(gl.TRIANGLES, size * 6, gl.UNSIGNED_SHORT, startIndex * 6 * 2);
 };

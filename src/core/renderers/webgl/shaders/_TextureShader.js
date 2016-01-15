@@ -19,15 +19,13 @@ function TextureShader(gl)
      */
     vertexSrc = TextureShader.defaultVertexSrc;
 
+   // console.log(vertexSrc)
     /**
      * The fragment shader.
      *
      * @member {string}
      */
     fragmentSrc = TextureShader.defaultFragmentSrc;
-
-   // console.log(vertexSrc);
-    console.log(fragmentSrc);
 
     Shader.call(this, gl, vertexSrc, fragmentSrc);//, uniforms, attributes);
 
@@ -38,13 +36,17 @@ TextureShader.prototype = Object.create(Shader.prototype);
 TextureShader.prototype.constructor = TextureShader;
 module.exports = TextureShader;
 
+var fs = require('fs');
+
 /**
  * The default vertex shader source
  *
  * @static
  * @constant
  */
-TextureShader.defaultVertexSrc = [
+TextureShader.defaultVertexSrc = fs.readFileSync(__dirname + '/texture.vert', 'utf8')
+//console.log(TextureShader.defaultVertexSrc)
+/*[
     'precision lowp float;',
     'attribute vec2 aVertexPosition;',
     'attribute vec2 aTextureCoord;',
@@ -61,14 +63,18 @@ TextureShader.defaultVertexSrc = [
     '   vColor = vec4(aColor.rgb * aColor.a, aColor.a);',
     '}'
 ].join('\n');
-
+*/
 /**
  * The default fragment shader source
  *
  * @static
  * @constant
  */
-TextureShader.defaultFragmentSrc = [
+TextureShader.defaultFragmentSrc = fs.readFileSync(__dirname + '/texture.frag', 'utf8')
+
+
+/*
+[
     'precision lowp float;',
 
     'varying vec2 vTextureCoord;',
@@ -79,4 +85,4 @@ TextureShader.defaultFragmentSrc = [
     'void main(void){',
     '   gl_FragColor = texture2D(uSampler, vTextureCoord) * vColor ;',
     '}'
-].join('\n');
+].join('\n');*/
