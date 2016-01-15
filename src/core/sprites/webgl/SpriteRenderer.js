@@ -1,6 +1,6 @@
 var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
-    TextureShader = require('../../renderers/webgl/shaders/_TextureShader'),
+    generateMultiTextureShader = require('../../renderers/webgl/shaders/generateMultiTextureShader'),
     createIndicesForQuads = require('../../utils/createIndicesForQuads'),
     CONST = require('../../const'),
     glCore = require('pixi-gl-core');
@@ -136,11 +136,11 @@ SpriteRenderer.prototype.onContextChange = function ()
 {
     var gl = this.renderer.gl;
 
-    this._shader = new TextureShader(gl);
+    this._shader = generateMultiTextureShader(gl, 16);
     this._shader.bind();
 
     // set default uniforms..
-    this._shader.uniforms.uSamplers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  //  this._shader.uniforms.uSamplers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
   //  var textureLoc = gl.getUniformLocation(this._shader.program, "uSamplers");
     // Tell the shader to use texture units 0 to 3
