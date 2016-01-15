@@ -202,7 +202,7 @@ SpriteRenderer.prototype.render = function (sprite)
  */
 SpriteRenderer.prototype.flush = function ()
 {
-    this.textureArray.length = 0;
+    //this.textureArray.length = 0;
 
     // If the batch is length 0 then return as there is nothing to draw
     if (this.currentBatchSize === 0)
@@ -250,7 +250,7 @@ SpriteRenderer.prototype.flush = function ()
                 this.textureArray[this.textureCount] = nextTexture;
                 textureId = nextTexture._id = this.textureCount++;
 
-                if(this.textureCount > 4)
+                if(this.textureCount > 16)
                 {
                     this.renderBatch(currentBaseTexture, batchSize, start);
         
@@ -285,9 +285,6 @@ SpriteRenderer.prototype.flush = function ()
             continue;
         }
 
-        // TODO trim??
-        var index = i * this.vertByteSize;
-
         var colors = this.colors;
         var positions = this.positions;
 
@@ -296,7 +293,7 @@ SpriteRenderer.prototype.flush = function ()
         var tint = sprite.tint;
         var uintTint = (tint >> 16) + (tint & 0xff00) + ((tint & 0xff) << 16) + (sprite.worldAlpha * 255 << 24);
 
-        var ix = index;
+        var ix = i * this.vertByteSize;;
 
         // xy
         positions[ix++] = vertexData[0];
@@ -347,15 +344,7 @@ SpriteRenderer.prototype.flush = function ()
 
     this.renderBatch(currentBaseTexture, batchSize, start);
     
-    // clean
-    for (var i = 0; i < this.textureCount; i++) 
-    {
-        this.textureArray[i]._active = false;
-    };
     
-    this.textureArray.length = 0;
-
-    this.textureCount = 0;
 
     // then reset the batch!
     this.currentBatchSize = 0;
@@ -379,7 +368,7 @@ SpriteRenderer.prototype.renderBatch = function (texture, size, startIndex)
     var gl = this.renderer.gl;
 
     // bind the texture..
-     
+    
   //  console.log(this._shader.uniforms.uSamplers)
     for (var i = 0; i < this.textureCount; i++) 
     {
@@ -388,6 +377,15 @@ SpriteRenderer.prototype.renderBatch = function (texture, size, startIndex)
 
     // now draw those suckas!
     gl.drawElements(gl.TRIANGLES, size * 6, gl.UNSIGNED_SHORT, startIndex * 6 * 2);
+
+    // clean
+    for (var i = 0; i < this.textureCount; i++) 
+    {
+        this.textureArray[i]._active = false;
+    };
+    
+    this.textureArray.length = 0;
+    this.textureCount = 0;
 };
 
 /**

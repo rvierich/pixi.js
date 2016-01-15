@@ -94,5 +94,5 @@ vec4 getSampleFromArray2(sampler2D textures[16], int ndx, vec2 uv)
 }
 
 void main(void){
-	gl_FragColor = getSampleFromArray2(uSamplers, int(vTextureId), vTextureCoord) * vColor;
+	gl_FragColor = getSampleFromArray16(uSamplers, int(vTextureId), vTextureCoord) * vColor;
 }
